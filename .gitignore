@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.env
+
+# Large Files
+*.exe
+*.msi
+
+# Logs
+*.log
+test_db_out.txt
+
+# OS
+.DS_Store
+Thumbs.db

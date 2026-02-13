@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strenger Pro | High-Speed Proximity Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --bg: #05060a;
+            --panel: rgba(20, 22, 32, 0.95);
+            --accent: #6c5ce7;
+            --accent-glow: rgba(108, 92, 231, 0.4);
+            --text: #ffffff;
+            --text-dim: #a0a0b0;
+            --danger: #ff5e57;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Animated Background */
+        body::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 50%, #1a1b2e 0%, #05060a 100%);
+            z-index: -1;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Navigation Sidebar */
+        .sidebar {
+            width: 360px;
+            background: var(--panel);
+            border-right: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            box-shadow: 10px 0 40px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            z-index: 10;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: var(--accent);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 25px var(--accent-glow);
+            font-weight: 700;
+            font-size: 1.3rem;
+        }
+
+        .map-card {
+            height: 260px;
+            background: #000;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        .stat-item {
+            background: var(--glass);
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 15px;
+            border: 1px solid var(--glass-border);
+            transition: 0.3s;
+        }
+
+        .stat-item:hover {
+            border-color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        /* Modern Chat Interface */
+        .chat-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-header {
+            padding: 25px 40px;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            background: rgba(5, 6, 10, 0.5);
+        }
+
+        .partner-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: #2d3436;
+            border: 2px solid var(--glass-border);
+            position: relative;
+        }
+
+        .status-dot {
+            position: absolute;
+            bottom: -3px;
+            right: -3px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 3px solid #161821;
+            background: #00b894;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .msg {
+            max-width: 65%;
+            padding: 14px 22px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            animation: slideUp 0.3s ease-out forwards;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .msg.sent {
+            align-self: flex-end;
+            background: var(--accent);
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 8px 25px var(--accent-glow);
+        }
+
+        .msg.received {
+            align-self: flex-start;
+            background: #1a1c27;
+            border-bottom-left-radius: 4px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .input-bar {
+            padding: 30px 40px;
+            background: rgba(5, 6, 10, 0.8);
+            display: flex;
+            gap: 20px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        input {
+            width: 100%;
+            background: #12141d;
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            color: white;
+            padding: 18px 24px;
+            outline: none;
+            transition: 0.3s;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 5px var(--accent-glow);
+        }
+
+        .btn {
+            padding: 0 35px;
+            border-radius: 16px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            height: 60px;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 5px 20px var(--accent-glow);
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.15);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #12141d;
+            color: var(--danger);
+            border: 2px solid rgba(255, 94, 87, 0.2);
+        }
+
+        .btn-danger:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Auth Experience */
+        #auth-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-card {
+            width: 440px;
+            background: #161821;
+            border-radius: 28px;
+            padding: 50px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        .auth-card input {
+            margin-bottom: 16px;
+            background: #0a0b10;
+            border: 1px solid #ffffff10;
+        }
+
+        .auth-card .btn {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #ffffff10;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- AUTHENTICATION OVERLAY -->
+    <div id="auth-overlay">
+        <div class="auth-card">
+            <div class="logo-icon" style="margin: 0 auto 20px;">S</div>
+            <h2 id="auth-title" style="text-align: center; margin-bottom: 30px;">Strenger Pro Login</h2>
+
+            <div id="login-view">
+                <input type="text" id="email" placeholder="Email or Username">
+                <input type="password" id="password" placeholder="Password">
+                <button class="btn btn-primary" onclick="login()">Enter Discovery Mode</button>
+                <p style="text-align: center; margin-top: 25px; color: var(--text-dim); font-size: 0.9rem;">
+                    Don't have a secure key? <a href="#" onclick="toggleAuth()"
+                        style="color: var(--accent); text-decoration: none;">Register Now</a>
+                </p>
+            </div>
+
+            <div id="register-view" style="display: none;">
+                <input type="text" id="reg-user" placeholder="Nickname">
+                <input type="email" id="reg-email" placeholder="Secure Email">
+                <input type="password" id="reg-pass" placeholder="Strong Password">
+                <select id="reg-gender"
+                    style="width: 100%; background: #0a0b10; color: white; border: 1px solid #ffffff10; padding: 18px; border-radius: 16px; margin-bottom: 20px;">
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                </select>
+                <button class="btn btn-primary" onclick="register()">Create identity</button>
+                <p style="text-align: center; margin-top: 25px; color: var(--text-dim); font-size: 0.9rem;">
+                    Back to base? <a href="#" onclick="location.reload()"
+                        style="color: var(--accent); text-decoration: none;">Login</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- SIDE NAVIGATION -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <div class="logo-icon">S</div>
+                <h1 style="font-size: 1.5rem; margin: 0; font-weight: 700;">Strenger Pro</h1>
+            </div>
+
+            <div class="map-card">
+                <div id="map"></div>
+            </div>
+
+            <div class="stats-box">
+                <div class="stat-item">
+                    <div class="stat-label">Security Protocol</div>
+                    <div class="stat-value" id="status" style="color: var(--accent);">INITIALIZING SOCKET...</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">WebRTC Encryption</div>
+                    <div class="stat-value" style="color: #00b894;">AES-256-GCM ACTIVE</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Nearby Discovery</div>
+                    <div class="stat-value" id="nearby-count">SCANNING AREA...</div>
+                </div>
+            </div>
+
+            <button class="btn btn-danger" onclick="nextStranger()" style="width: 100%; margin-top: auto;">
+                DISCONNECT (ESC)
+            </button>
+        </aside>
+
+        <!-- CHAT INTERFACE -->
+        <main class="chat-view">
+            <header class="chat-header">
+                <div class="partner-info">
+                    <div class="avatar"><span class="status-dot"></span></div>
+                    <div>
+                        <div id="chat-partner" style="font-weight: 700; font-size: 1.2rem;">Ready for Matching</div>
+                        <div id="typing-status" style="font-size: 0.8rem; color: var(--accent); display: none;">Stranger
+                            is typing...</div>
+                        <div id="p2p-status" style="font-size: 0.8rem; color: #00b894;">Encrypted P2P Active</div>
+                    </div>
+                </div>
+                <div
+                    style="background: var(--glass); padding: 10px 20px; border-radius: 30px; font-size: 0.8rem; border: 1px solid var(--glass-border);">
+                    Latency: <span id="ping" style="color: var(--accent);">8ms</span>
+                </div>
+            </header>
+
+            <div class="messages-container" id="messages">
+                <!-- MESSAGES -->
+            </div>
+
+            <div class="input-bar">
+                <div class="input-wrapper">
+                    <input type="text" id="msg-input" placeholder="Initiate conversation..."
+                        onkeydown="if(event.key=='Enter') sendMsg()">
+                </div>
+                <button class="btn btn-primary" onclick="sendMsg()">BROADCAST</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let ws, token, peerId, peerConn, dataChannel, map;
+        let myLocation = { lat: 0, lon: 0 };
+        let markers = {};
+        let payload_id = null;
+
+        const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] };
+
+        /* GEOLOCATION & MAP */
+        function initMap() {
+            if (!map) {
+                map = L.map('map', { zoomControl: false }).setView([myLocation.lat, myLocation.lon], 13);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+                L.circleMarker([myLocation.lat, myLocation.lon], { radius: 8, color: '#fff', fillColor: '#6c5ce7', fillOpacity: 1 }).addTo(map).bindPopup("Your Position");
+            }
+        }
+
+        function updateMap(users) {
+            document.getElementById('nearby-count').innerText = `${users.length} NEIGHBORS ONLINE`;
+            Object.values(markers).forEach(m => map.removeLayer(m));
+            markers = {};
+            users.forEach(u => {
+                if (u.user_id != payload_id) {
+                    markers[u.user_id] = L.circleMarker([u.lat, u.lon], {
+                        radius: 12, color: 'rgba(108, 92, 231, 0.5)', fillColor: '#6c5ce7', fillOpacity: 0.8
+                    }).addTo(map).bindPopup("Active Stranger");
+                }
+            });
+        }
+
+        /* AUTH LOGIC */
+        async function login() {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            const res = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password: pass })
+            });
+            const data = await res.json();
+            if (res.ok && data.access_token) {
+                token = data.access_token;
+                document.getElementById('auth-overlay').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('auth-overlay').style.display = 'none';
+                    startApp();
+                }, 300);
+            } else { alert("ACCESS DENIED: " + (data.detail || "Invalid Key")); }
+        }
+
+        async function register() {
+            const data = {
+                username: document.getElementById('reg-user').value,
+                email: document.getElementById('reg-email').value,
+                password: document.getElementById('reg-pass').value,
+                gender: document.getElementById('reg-gender').value,
+                avatar_type: 'default'
+            };
+            const res = await fetch('/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) {
+                const result = await res.json();
+                token = result.access_token;
+                document.getElementById('auth-overlay').style.display = 'none';
+                startApp();
+            } else { alert("REGISTRATION FAILED"); }
+        }
+
+        function toggleAuth() {
+            document.getElementById('login-view').style.display = 'none';
+            document.getElementById('register-view').style.display = 'block';
+        }
+
+        /* APP CORE */
+        function startApp() {
+            payload_id = JSON.parse(atob(token.split('.')[1])).id;
+            navigator.geolocation.getCurrentPosition(pos => {
+                myLocation = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+                initMap(); initWS();
+            }, () => {
+                addSystemMsg("⚠️ GPS UNAVAILABLE: Using default node.");
+                initMap(); initWS();
+            });
+
+            // HEARTBEAT (5s)
+            setInterval(() => {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'ping', ts: Date.now() }));
+                }
+            }, 5000);
+        }
+
+        function initWS() {
+            if (ws) ws.close();
+            ws = new WebSocket(`ws://${location.host}/ws/${token}`);
+            ws.onopen = () => {
+                document.getElementById('status').innerText = 'PROXIMITY SEARCH ACTIVE';
+                addSystemMsg("🛰️ DISCOVERY PROTOCOL INITIALIZED. Searching...");
+                ws.send(JSON.stringify({ type: 'search_nearest', lat: myLocation.lat, lon: myLocation.lon }));
+            };
+
+            ws.onclose = () => {
+                document.getElementById('status').innerText = 'CONNECTION LOST';
+                document.getElementById('status').style.color = 'var(--danger)';
+                addSystemMsg("🔴 Connection lost. Attempting to reconnect...");
+                setTimeout(initWS, 3000);
+            };
+
+            ws.onerror = (err) => {
+                console.error("Socket Error:", err);
+                document.getElementById('status').innerText = 'NETWORK ERROR';
+            };
+            ws.onmessage = async (e) => {
+                const data = JSON.parse(e.data);
+                if (data.type === 'match_found') {
+                    peerId = data.peer_id;
+                    document.getElementById('status').innerText = peerId === 0 ? 'AI PROTOCOL LINKED' : 'SECURE P2P LINKED';
+                    document.getElementById('chat-partner').innerText = peerId === 0 ? 'Stranger (AI)' : 'STRANGER CONNECTED';
+                    document.getElementById('p2p-status').innerText = peerId === 0 ? 'Verified AI Presence' : 'Encrypted P2P Active';
+                    addSystemMsg(peerId === 0 ? "🤖 BOT TUNNEL ESTABLISHED. Start chatting." : "⚡ P2P TUNNEL ESTABLISHED. Start chatting.");
+                    if (peerId !== 0) initWebRTC(); // Only start WebRTC for humans
+                } else if (data.type === 'active_users') { updateMap(data.users); }
+                else if (data.type === 'bot_typing') {
+                    document.getElementById('typing-status').style.display = data.state ? 'block' : 'none';
+                    document.getElementById('p2p-status').style.display = data.state ? 'none' : 'block';
+                }
+                else if (data.type === 'chat_msg' && data.peer_id === 0) {
+                    document.getElementById('typing-status').style.display = 'none';
+                    document.getElementById('p2p-status').style.display = 'block';
+                    addMsg(data.text, 'received');
+                } else if (data.type === 'pong') {
+                    const latency = Date.now() - data.ts;
+                    document.getElementById('ping').innerText = `${latency}ms`;
+                }
+
+                if (data.type === 'offer') { handleSignaling(data.offer, 'offer'); }
+                else if (data.type === 'answer') { await peerConn.setRemoteDescription(new RTCSessionDescription(data.answer)); }
+                else if (data.type === 'ice') { await peerConn.addIceCandidate(new RTCIceCandidate(data.candidate)); }
+            };
+        }
+
+        async function handleSignaling(offer, type) {
+            if (!peerConn) initWebRTC();
+            await peerConn.setRemoteDescription(new RTCSessionDescription(offer));
+            const answer = await peerConn.createAnswer();
+            await peerConn.setLocalDescription(answer);
+            ws.send(JSON.stringify({ type: 'answer', answer, peer_id: peerId }));
+        }
+
+        function initWebRTC() {
+            if (peerConn) peerConn.close();
+            peerConn = new RTCPeerConnection(rtcConfig);
+            dataChannel = peerConn.createDataChannel("secure_comms");
+
+            dataChannel.onmessage = (e) => addMsg(e.data, 'received');
+            peerConn.ondatachannel = (e) => {
+                e.channel.onmessage = (ev) => addMsg(ev.data, 'received');
+                dataChannel = e.channel;
+            };
+
+            peerConn.onicecandidate = (e) => {
+                if (e.candidate) ws.send(JSON.stringify({ type: 'ice', candidate: e.candidate, peer_id: peerId }));
+            };
+
+            peerConn.createOffer().then(o => {
+                peerConn.setLocalDescription(o);
+                ws.send(JSON.stringify({ type: 'offer', offer: o, peer_id: peerId }));
+            });
+        }
+
+        function sendMsg() {
+            const el = document.getElementById('msg-input');
+            const txt = el.value.trim();
+            if (!txt) return;
+
+            if (peerId === null) {
+                addSystemMsg("🕒 Searching for a partner... Please wait.");
+                // Add a subtle shake to the input to show it didn't send
+                el.style.borderColor = 'var(--danger)';
+                setTimeout(() => el.style.borderColor = 'var(--glass-border)', 500);
+                return;
+            }
+
+            if (peerId === 0) {
+                // SEND TO BOT VIA SOCKET
+                ws.send(JSON.stringify({ type: 'log_msg', peer_id: 0, text: txt }));
+                addMsg(txt, 'sent');
+                el.value = '';
+            } else if (dataChannel && dataChannel.readyState === 'open') {
+                // SEND TO HUMAN VIA WebRTC
+                dataChannel.send(txt);
+                ws.send(JSON.stringify({ type: 'log_msg', peer_id: peerId, text: txt }));
+                addMsg(txt, 'sent');
+                el.value = '';
+            } else {
+                addSystemMsg("⚠️ Link is still encrypting... One moment.");
+            }
+        }
+
+        function addMsg(text, type) {
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const div = document.createElement('div');
+            div.className = `msg ${type}`;
+            div.innerHTML = `${text} <span style="display: block; font-size: 0.65rem; margin-top: 4px; opacity: 0.6; text-align: right;">${time}</span>`;
+            const container = document.getElementById('messages');
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addSystemMsg(t) {
+            const div = document.createElement('div');
+            div.style = "text-align: center; font-size: 0.8rem; color: var(--accent); padding: 15px; background: var(--glass); border-radius: 12px; margin: 10px 0; border: 1px solid var(--glass-border);";
+            div.innerHTML = `🛡️ <b>System:</b> ${t}`;
+            document.getElementById('messages').appendChild(div);
+            const container = document.getElementById('messages');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function nextStranger() {
+            if (peerConn) peerConn.close();
+            peerId = null;
+            document.getElementById('messages').innerHTML = '';
+            document.getElementById('chat-partner').innerText = 'Re-scanning Area...';
+            document.getElementById('typing-status').style.display = 'none';
+            document.getElementById('p2p-status').style.display = 'block';
+            document.getElementById('status').innerText = 'PROXIMITY SEARCH ACTIVE';
+            document.getElementById('status').style.color = 'var(--accent)';
+            ws.send(JSON.stringify({ type: 'search_nearest', lat: myLocation.lat, lon: myLocation.lon }));
+        }
+
+        window.addEventListener('keydown', (e) => { if (e.key === 'Escape') nextStranger(); });
+    </script>
+</body>
+
+</html>

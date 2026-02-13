@@ -1,0 +1,13 @@
+gunicorn
+uvicorn[standard]
+pydantic-settings
+fastapi
+jinja2
+python-multipart
+websockets
+httpx
+mysql-connector-python
+python-jose[cryptography]
+passlib[bcrypt]
+python-socketio
+python-dotenv
