@@ -1,5 +1,7 @@
 import mysql.connector
 from mysql.connector import pooling
+import psycopg2
+from psycopg2 import pool
 import os
 import logging
 from dotenv import load_dotenv
@@ -7,22 +9,30 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Database Configuration
+# KOYEB CLOUD: Prioritize DATABASE_URL or Postgres variables
+import urllib.parse as urlparse
+
+db_host = os.getenv("DATABASE_HOST", os.getenv("DB_HOST", "localhost"))
+db_user = os.getenv("DATABASE_USER", os.getenv("DB_USER", "root"))
+db_pass = os.getenv("DATABASE_PASSWORD", os.getenv("DB_PASSWORD", ""))
+db_port = os.getenv("DATABASE_PORT", os.getenv("DB_PORT", "5432" if "koyeb.app" in db_host else "4000"))
+db_name = os.getenv("DATABASE_NAME", os.getenv("DB_NAME", "koyebdb"))
+
 db_config = {
-    "host": os.getenv("DB_HOST", "gateway01.ap-southeast-1.prod.aws.tidbcloud.com"),
-    "user": os.getenv("DB_USER", "8YWDkrLD14XhKzu.root"),
-    "password": os.getenv("DB_PASSWORD", "H6qUhmas30HjgyEG"),
-    "port": int(os.getenv("DB_PORT", 4000)),
+    "host": db_host,
+    "user": db_user,
+    "password": db_pass,
+    "port": int(db_port),
     "ssl_disabled": False 
 }
 
-# TiDB / Cloud Config
+# PRO TIP: Postgres uses 'sslmode', MySQL uses 'ssl_mode'
 if db_config["host"] != "localhost":
-    if os.path.exists("/etc/ssl/certs/ca-certificates.crt"):
-        db_config["ssl_mode"] = "VERIFY_IDENTITY"
-        db_config["ssl_ca"] = "/etc/ssl/certs/ca-certificates.crt"
-    else:
-        db_config["ssl_mode"] = "REQUIRED"
-db_name = os.getenv("DB_NAME", "test")
+    db_config["sslmode"] = "require"
+    # Remove MySQL specific keys if present to avoid confusion
+    if "ssl_disabled" in db_config: del db_config["ssl_disabled"]
+
+db_name = os.getenv("DATABASE_NAME", os.getenv("DB_NAME", "koyebdb"))
 
 # Global Pool Variable
 db_pool = None
@@ -42,6 +52,18 @@ def init_pool():
 
 def get_db_connection():
     try:
+        # Postgres Logic (Cloud)
+        if "pg.koyeb.app" in db_config["host"]:
+             return psycopg2.connect(
+                host=db_config["host"],
+                database=db_name,
+                user=db_config["user"],
+                password=db_config["password"],
+                port=db_config["port"],
+                sslmode='require'
+            )
+        
+        # MySQL Logic (Local/TiDB)
         if db_pool:
             try:
                 return db_pool.get_connection()
@@ -73,7 +95,27 @@ def init_db():
                 cursor.close()
                 conn = mysql.connector.connect(database=db_name, **db_config)
 
-        # 2. Run Schema
+        if "pg.koyeb.app" in db_config["host"]:
+             # POSTGRES SYNC
+            logger.info("--- POSTGRES SCHEMA SYNC ---")
+            conn = psycopg2.connect(
+                host=db_config["host"],
+                database=db_name,
+                user=db_config["user"],
+                password=db_config["password"],
+                port=db_config["port"],
+                sslmode='require'
+            )
+            cursor = conn.cursor()
+            with open("schema_pg.sql", "r") as f:
+                cursor.execute(f.read())
+            conn.commit()
+            cursor.close()
+            conn.close()
+            logger.info("POSTGRES DB READY")
+            return
+
+        # 2. Run Schema (MySQL)
         conn = mysql.connector.connect(database=db_name, **db_config)
         cursor = conn.cursor()
         with open("schema.sql", "r") as f:

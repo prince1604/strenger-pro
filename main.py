@@ -115,18 +115,26 @@ async def register(user: UserRegister):
     
     try:
         sql = "INSERT INTO users (username, email, password_hash, gender, avatar_type) VALUES (%s, %s, %s, %s, %s)"
-        cursor.execute(sql, (user.username, user.email, hashed, user.gender, user.avatar_type))
+        # POSTGRES COMPATIBILITY: Use RETURNING id for last_id
+        if "pg.koyeb.app" in db_config["host"]:
+            sql += " RETURNING id"
+            cursor.execute(sql, (user.username, user.email, hashed, user.gender, user.avatar_type))
+            last_id = cursor.fetchone()[0]
+        else:
+            cursor.execute(sql, (user.username, user.email, hashed, user.gender, user.avatar_type))
+            last_id = cursor.lastrowid
+            
         conn.commit()
-        last_id = cursor.lastrowid
         
         logger.info(f"REG-SUCCESS: {user.username} granted ID {last_id}.")
         token = create_access_token(data={"sub": user.email, "id": last_id})
         return {"status": "success", "access_token": token, "token_type": "bearer"}
     except Exception as e:
+        conn.rollback()
         logger.warning(f"REG-DENIED: {user.username} - {e}")
-        if "Duplicate entry" in str(e):
+        if "Duplicate entry" in str(e) or "unique constraint" in str(e):
             raise HTTPException(status_code=400, detail="Identity already exists.")
-        raise HTTPException(status_code=500, detail="Internal Protocol Error")
+        raise HTTPException(status_code=500, detail=f"Internal Protocol Error: {e}")
     finally:
         cursor.close()
         conn.close()
@@ -138,7 +146,13 @@ async def login(credentials: dict):
     
     conn = get_db_connection()
     if not conn: raise HTTPException(status_code=503, detail="Database Offline")
-    cursor = conn.cursor(dictionary=True)
+    
+    # POSTGRES COMPATIBILITY: Dictionary Cursor
+    if "pg.koyeb.app" in db_config["host"]:
+        import psycopg2.extras
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    else:
+        cursor = conn.cursor(dictionary=True)
     
     try:
         cursor.execute("SELECT * FROM users WHERE email=%s OR username=%s", (identity, identity))

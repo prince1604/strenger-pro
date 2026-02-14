@@ -11,3 +11,4 @@ passlib[bcrypt]
 bcrypt
 cryptography
 python-dotenv
+psycopg2-binary
