@@ -1,4 +1,3 @@
-# Update requirements.txt to be more compatible
 gunicorn
 uvicorn[standard]
 fastapi
@@ -9,4 +8,6 @@ httpx
 mysql-connector-python
 python-jose[cryptography]
 passlib[bcrypt]
+bcrypt
+cryptography
 python-dotenv
