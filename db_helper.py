@@ -2,7 +2,6 @@
 Database Helper - Abstraction layer for MySQL/Postgres compatibility
 """
 from database import get_db_connection, db_config
-import psycopg2.extras
 
 def is_postgres():
     """Check if we're using Postgres"""
@@ -12,6 +11,7 @@ def get_cursor(conn, dict_cursor=False):
     """Get a cursor with optional dictionary mode"""
     if is_postgres():
         if dict_cursor:
+            import psycopg2.extras
             return conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         return conn.cursor()
     else:
