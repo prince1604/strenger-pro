@@ -17,8 +17,11 @@ db_config = {
 
 # TiDB / Cloud Config
 if db_config["host"] != "localhost":
-    db_config["ssl_mode"] = "VERIFY_IDENTITY"
-    db_config["ssl_ca"] = "/etc/ssl/certs/ca-certificates.crt"
+    if os.path.exists("/etc/ssl/certs/ca-certificates.crt"):
+        db_config["ssl_mode"] = "VERIFY_IDENTITY"
+        db_config["ssl_ca"] = "/etc/ssl/certs/ca-certificates.crt"
+    else:
+        db_config["ssl_mode"] = "REQUIRED"
 db_name = os.getenv("DB_NAME", "strengerchat_pro")
 
 # Global Pool Variable
