@@ -103,38 +103,33 @@ async def get_index():
         return HTMLResponse(content="<h1>Critical UI Error. Check logs.</h1>", status_code=500)
 
 # --- CORE BUSINESS LOGIC (REG/LOGIN) ---
-@app.post("/register")
+@app.post("/register", response_model=Token)
 async def register(user: UserRegister):
     logger.info(f"PROTOCOL-REG: {user.username} is requesting entry.")
+    
     conn = get_db_connection()
     if not conn:
         raise HTTPException(status_code=503, detail="Database Offline")
-        
-    cursor = conn.cursor()
-    hashed = get_password_hash(user.password)
     
     try:
+        from db_helper import get_cursor, execute_insert
+        cursor = get_cursor(conn, dict_cursor=False)
+        hashed = get_password_hash(user.password)
+        
         sql = "INSERT INTO users (username, email, password_hash, gender, avatar_type) VALUES (%s, %s, %s, %s, %s)"
-        # POSTGRES COMPATIBILITY: Use RETURNING id for last_id
-        if "pg.koyeb.app" in db_config["host"]:
-            sql += " RETURNING id"
-            cursor.execute(sql, (user.username, user.email, hashed, user.gender, user.avatar_type))
-            last_id = cursor.fetchone()[0]
-        else:
-            cursor.execute(sql, (user.username, user.email, hashed, user.gender, user.avatar_type))
-            last_id = cursor.lastrowid
-            
+        last_id = execute_insert(cursor, sql, (user.username, user.email, hashed, user.gender, user.avatar_type))
         conn.commit()
         
         logger.info(f"REG-SUCCESS: {user.username} granted ID {last_id}.")
         token = create_access_token(data={"sub": user.email, "id": last_id})
         return {"status": "success", "access_token": token, "token_type": "bearer"}
+        
     except Exception as e:
         conn.rollback()
         logger.warning(f"REG-DENIED: {user.username} - {e}")
-        if "Duplicate entry" in str(e) or "unique constraint" in str(e):
+        if "Duplicate entry" in str(e) or "unique constraint" in str(e) or "duplicate key" in str(e).lower():
             raise HTTPException(status_code=400, detail="Identity already exists.")
-        raise HTTPException(status_code=500, detail=f"Internal Protocol Error: {e}")
+        raise HTTPException(status_code=500, detail="Registration failed. Please try again.")
     finally:
         cursor.close()
         conn.close()
@@ -145,16 +140,13 @@ async def login(credentials: dict):
     logger.info(f"PROTOCOL-AUTH: Auth request for {identity}")
     
     conn = get_db_connection()
-    if not conn: raise HTTPException(status_code=503, detail="Database Offline")
-    
-    # POSTGRES COMPATIBILITY: Dictionary Cursor
-    if "pg.koyeb.app" in db_config["host"]:
-        import psycopg2.extras
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    else:
-        cursor = conn.cursor(dictionary=True)
+    if not conn: 
+        raise HTTPException(status_code=503, detail="Database Offline")
     
     try:
+        from db_helper import get_cursor
+        cursor = get_cursor(conn, dict_cursor=True)
+        
         cursor.execute("SELECT * FROM users WHERE email=%s OR username=%s", (identity, identity))
         user = cursor.fetchone()
         
@@ -165,6 +157,11 @@ async def login(credentials: dict):
         logger.info(f"AUTH-SUCCESS: {user['username']} session started.")
         token = create_access_token(data={"sub": user['email'], "id": user['id']})
         return {"access_token": token, "token_type": "bearer"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Login error: {e}")
+        raise HTTPException(status_code=500, detail="Login failed. Please try again.")
     finally:
         cursor.close()
         conn.close()
