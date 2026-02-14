@@ -11,12 +11,14 @@ db_config = {
     "host": os.getenv("DB_HOST", "localhost"),
     "user": os.getenv("DB_USER", "root"),
     "password": os.getenv("DB_PASSWORD", ""),
-    "port": int(os.getenv("DB_PORT", 3306)),
+    "port": int(os.getenv("DB_PORT", 4000)),
+    "ssl_disabled": False 
 }
 
-# Add SSL for Cloud Providers (Aiven, AWS, etc.)
+# TiDB / Cloud Config
 if db_config["host"] != "localhost":
-    db_config["ssl_disabled"] = False
+    db_config["ssl_mode"] = "VERIFY_IDENTITY"
+    db_config["ssl_ca"] = "/etc/ssl/certs/ca-certificates.crt"
 db_name = os.getenv("DB_NAME", "strengerchat_pro")
 
 # Global Pool Variable
