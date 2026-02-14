@@ -51,20 +51,22 @@ def init_db():
     logger = logging.getLogger("StrengerPro")
     logger.info("--- Cloud-Ready Database Sync ---")
     try:
-        # 1. Try connecting directly to the database first
-        try:
+        # AIVEN CLOUD FIX: Do not try to create DB if on cloud
+        if db_config["host"] != "localhost":
+            logger.info(f"CLOUD MODE: Using existing database '{db_name}'")
             conn = mysql.connector.connect(database=db_name, **db_config)
-            logger.info(f"Connected to existing database: {db_name}")
-        except:
-            # 2. If it doesn't exist, try creating it (works for local XAMPP)
-            logger.info(f"Database {db_name} not found. Attempting creation...")
-            conn = mysql.connector.connect(**db_config)
-            cursor = conn.cursor()
-            cursor.execute(f"CREATE DATABASE IF NOT EXISTS {db_name}")
-            conn.commit()
-            cursor.close()
-            conn.close()
-            conn = mysql.connector.connect(database=db_name, **db_config)
+        else:
+            # Localhost logic (creates DB if missing)
+            try:
+                conn = mysql.connector.connect(database=db_name, **db_config)
+            except:
+                logger.info(f"Database {db_name} not found. Attempting creation...")
+                conn = mysql.connector.connect(**db_config)
+                cursor = conn.cursor()
+                cursor.execute(f"CREATE DATABASE IF NOT EXISTS {db_name}")
+                conn.commit()
+                cursor.close()
+                conn = mysql.connector.connect(database=db_name, **db_config)
 
         # 2. Run Schema
         conn = mysql.connector.connect(database=db_name, **db_config)
