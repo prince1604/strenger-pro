@@ -9,7 +9,7 @@ import logging
 import os
 import bcrypt
 from jose import jwt
-from database import get_db_connection, init_db
+from database import get_db_connection, init_db, db_config
 from passlib.context import CryptContext
 
 # --- PRO-LEVEL LOGGING SETUP ---
