@@ -12,10 +12,11 @@ load_dotenv()
 # KOYEB CLOUD: Prioritize DATABASE_URL or Postgres variables
 import urllib.parse as urlparse
 
-db_host = os.getenv("DATABASE_HOST", os.getenv("DB_HOST", "localhost"))
-db_user = os.getenv("DATABASE_USER", os.getenv("DB_USER", "root"))
-db_pass = os.getenv("DATABASE_PASSWORD", os.getenv("DB_PASSWORD", ""))
-db_port = os.getenv("DATABASE_PORT", os.getenv("DB_PORT", "5432" if "koyeb.app" in db_host else "4000"))
+# HARDCODED FALLBACK FOR KOYEB POSTGRES
+db_host = os.getenv("DATABASE_HOST", os.getenv("DB_HOST", "ep-patient-wind-a1phbzpe.ap-southeast-1.pg.koyeb.app"))
+db_user = os.getenv("DATABASE_USER", os.getenv("DB_USER", "koyeb-adm"))
+db_pass = os.getenv("DATABASE_PASSWORD", os.getenv("DB_PASSWORD", "npg_Q1lakOpE5omY"))
+db_port = os.getenv("DATABASE_PORT", os.getenv("DB_PORT", "5432"))
 db_name = os.getenv("DATABASE_NAME", os.getenv("DB_NAME", "koyebdb"))
 
 db_config = {
