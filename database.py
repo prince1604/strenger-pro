@@ -8,9 +8,9 @@ load_dotenv()
 
 # Database Configuration
 db_config = {
-    "host": os.getenv("DB_HOST", "localhost"),
-    "user": os.getenv("DB_USER", "root"),
-    "password": os.getenv("DB_PASSWORD", ""),
+    "host": os.getenv("DB_HOST", "gateway01.ap-southeast-1.prod.aws.tidbcloud.com"),
+    "user": os.getenv("DB_USER", "8YWDkrLD14XhKzu.root"),
+    "password": os.getenv("DB_PASSWORD", "H6qUhmas30HjgyEG"),
     "port": int(os.getenv("DB_PORT", 4000)),
     "ssl_disabled": False 
 }
@@ -22,7 +22,7 @@ if db_config["host"] != "localhost":
         db_config["ssl_ca"] = "/etc/ssl/certs/ca-certificates.crt"
     else:
         db_config["ssl_mode"] = "REQUIRED"
-db_name = os.getenv("DB_NAME", "strengerchat_pro")
+db_name = os.getenv("DB_NAME", "test")
 
 # Global Pool Variable
 db_pool = None
