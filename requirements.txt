@@ -1,6 +1,6 @@
+# Update requirements.txt to be more compatible
 gunicorn
 uvicorn[standard]
-pydantic-settings
 fastapi
 jinja2
 python-multipart
@@ -9,5 +9,4 @@ httpx
 mysql-connector-python
 python-jose[cryptography]
 passlib[bcrypt]
-python-socketio
 python-dotenv
