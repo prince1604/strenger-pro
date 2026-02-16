@@ -1,7 +1,5 @@
 import mysql.connector
 from mysql.connector import pooling
-import psycopg2
-from psycopg2 import pool
 import os
 import logging
 from dotenv import load_dotenv
@@ -41,9 +39,12 @@ db_config = {
 
 # PRO TIP: Postgres uses 'sslmode', MySQL uses 'ssl_mode'
 if db_config["host"] != "localhost":
-    db_config["sslmode"] = "require"
-    # Remove MySQL specific keys if present to avoid confusion
-    if "ssl_disabled" in db_config: del db_config["ssl_disabled"]
+    # Make a copy for MySQL to avoid polluting global config if mixed usage
+    # But for now, we just set it. 
+    # ERROR FIX: Only add sslmode if we are SURE it's Postgres? 
+    # No, we can't contextually change global config easily.
+    # Instead, we will handle this in get_connection logic.
+    pass 
 
 db_name = os.getenv("DATABASE_NAME", os.getenv("DB_NAME", "koyebdb"))
 
@@ -53,11 +54,15 @@ db_pool = None
 def init_pool():
     global db_pool
     try:
+        # Prevent MySQL Pool from crashing with Postgres args
+        safe_config = db_config.copy()
+        if "sslmode" in safe_config: del safe_config["sslmode"]
+        
         db_pool = pooling.MySQLConnectionPool(
             pool_name="pro_pool",
             pool_size=10,
             database=db_name,
-            **db_config
+            **safe_config
         )
         print("Database Connection Pool initialized.")
     except Exception as e:
@@ -67,6 +72,7 @@ def init_pool():
 last_error = None
 try:
     import psycopg2
+    from psycopg2 import pool
 except ImportError:
     last_error = "psycopg2-binary not installed in environment"
     psycopg2 = None
