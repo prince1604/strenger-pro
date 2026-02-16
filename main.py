@@ -109,7 +109,10 @@ async def register(user: UserRegister):
     
     conn = get_db_connection()
     if not conn:
-        raise HTTPException(status_code=503, detail="Database Offline")
+        from database import last_error
+        err_msg = f"Database Error: {last_error}" if last_error else "Database Offline (Unknown Error)"
+        logger.error(f"REG-FAIL-DB: {err_msg}")
+        raise HTTPException(status_code=503, detail=err_msg)
     
     try:
         from db_helper import get_cursor, execute_insert
@@ -141,7 +144,9 @@ async def login(credentials: dict):
     
     conn = get_db_connection()
     if not conn: 
-        raise HTTPException(status_code=503, detail="Database Offline")
+        from database import last_error
+        err_msg = f"Database Error: {last_error}" if last_error else "Database Offline"
+        raise HTTPException(status_code=503, detail=err_msg)
     
     try:
         from db_helper import get_cursor
@@ -189,13 +194,16 @@ class ConnectionManager:
     async def broadcast_active_users(self):
         conn = get_db_connection()
         if not conn: return
-        cursor = conn.cursor(dictionary=True)
+        from db_helper import get_cursor
+        cursor = get_cursor(conn, dict_cursor=True)
         try:
             cursor.execute("SELECT user_id, latitude as lat, longitude as lon FROM active_sessions")
             users = cursor.fetchall()
-            msg = json.dumps({"type": "active_users", "users": users})
-            for uid in list(self.active_connections.keys()):
-                await self.send_personal_message(msg, uid)
+            # Convert to list of dicts for PostgreSQL compatibility
+            if users:
+                msg = json.dumps({"type": "active_users", "users": [dict(u) if hasattr(u, 'items') else u for u in users]})
+                for uid in list(self.active_connections.keys()):
+                    await self.send_personal_message(msg, uid)
         finally:
             cursor.close()
             conn.close()
@@ -227,29 +235,39 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 
                 conn = get_db_connection()
                 if not conn: continue
-                cursor = conn.cursor(dictionary=True)
-                point_sql = f"POINT({lon} {lat})"
+                from db_helper import get_cursor, is_postgres
+                cursor = get_cursor(conn, dict_cursor=True)
                 
                 try:
-                    cursor.execute("""
-                        INSERT INTO active_sessions (user_id, latitude, longitude, location_point, status)
-                        VALUES (%s, %s, %s, ST_GeomFromText(%s), 'searching')
-                        ON DUPLICATE KEY UPDATE 
-                        latitude=%s, longitude=%s, location_point=ST_GeomFromText(%s), status='searching'
-                    """, (user_id, lat, lon, point_sql, lat, lon, point_sql))
+                    # PostgreSQL/MySQL compatible insert/update
+                    if is_postgres():
+                        # PostgreSQL UPSERT
+                        cursor.execute("""
+                            INSERT INTO active_sessions (user_id, latitude, longitude, status)
+                            VALUES (%s, %s, %s, 'searching')
+                            ON CONFLICT (user_id) DO UPDATE 
+                            SET latitude=%s, longitude=%s, status='searching', last_active=CURRENT_TIMESTAMP
+                        """, (user_id, lat, lon, lat, lon))
+                    else:
+                        # MySQL UPSERT
+                        cursor.execute("""
+                            INSERT INTO active_sessions (user_id, latitude, longitude, status)
+                            VALUES (%s, %s, %s, 'searching')
+                            ON DUPLICATE KEY UPDATE 
+                            latitude=%s, longitude=%s, status='searching'
+                        """, (user_id, lat, lon, lat, lon))
                     conn.commit()
                     
-                    # PROXIMITY ENGINE (Optimized)
+                    # Simple matching: Find any other user searching (no complex geospatial)
                     cursor.execute("""
-                        SELECT s.user_id, ST_Distance_Sphere(s.location_point, ST_GeomFromText(%s)) as dist
-                        FROM active_sessions s
-                        WHERE s.user_id != %s AND s.status = 'searching'
-                        ORDER BY dist ASC LIMIT 1
-                    """, (point_sql, user_id))
+                        SELECT user_id FROM active_sessions
+                        WHERE user_id != %s AND status = 'searching'
+                        LIMIT 1
+                    """, (user_id,))
                     
                     match = cursor.fetchone()
                     if match:
-                        peer_id = match['user_id']
+                        peer_id = match['user_id'] if isinstance(match, dict) else match[0]
                         logger.info(f"P2P-MATCH: {user_id} <---> {peer_id} (Human Linked)")
                         cursor.execute("UPDATE active_sessions SET status='chatting' WHERE user_id IN (%s, %s)", (user_id, peer_id))
                         conn.commit()

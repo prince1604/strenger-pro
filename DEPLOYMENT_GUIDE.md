@@ -4,11 +4,27 @@ Follow these steps to get your project online with a **Public URL** for free, us
 
 ---
 
-## 1. Get a Free Database (MySQL)
-Cloud providers need a remote database. **Aiven** offers a high-performance Free MySQL instance.
-1.  Go to [Aiven.io](https://aiven.io/) and create a free account.
-2.  Create a **Free MySQL** service.
-3.  Copy the connection details: `Host`, `Port`, `User`, `Password`, and `Database Name`.
+## 1. Set Up Koyeb PostgreSQL Database
+Koyeb provides a managed PostgreSQL database for your application.
+
+### Create Database:
+1. Go to [Koyeb.com](https://www.koyeb.com/) → **Database Services**
+2. Click **"Create Database"** (if you haven't already)
+3. Select **PostgreSQL** (Free tier available)
+4. Choose a region (e.g., Singapore `ap-southeast-1`)
+5. Name it `koyebdb` (or any name you prefer)
+6. Click **"Create"**
+
+### Get Connection Details:
+1. Click on your **database name** in the databases list
+2. Copy these exact values from the **Connection Details** section:
+   - **Host**: `ep-XXXXX-XXXXX.ap-southeast-1.pg.koyeb.app`
+   - **Port**: `5432`
+   - **User**: `koyeb-adm` (usually)
+   - **Password**: `npg_XXXXXXXXXXXXXXX` (**IMPORTANT**: Copy the FULL password!)
+   - **Database**: `koyebdb`
+
+⚠️ **CRITICAL**: Save these credentials securely - you'll need them in the next steps!
 
 ---
 
@@ -26,12 +42,25 @@ GitHub will host your code and connect it to the deployment server.
 2.  Click **"Create Service"**.
 3.  Select **GitHub** and authorize your `strenger-pro` repository.
 4.  **Environment Variables (CRITICAL):**
-    Add these variables in the Koyeb dashboard:
-    *   `DB_HOST`: (Your Aiven Host)
-    *   `DB_USER`: (Your Aiven User)
-    *   `DB_PASSWORD`: (Your Aiven Password)
-    *   `DB_NAME`: (Your Aiven Database Name)
-    *   `SECRET_KEY`: (Make up a long random string)
+    Add these variables in the Koyeb **App Settings** → **Environment** section:
+    ```
+    DATABASE_HOST=<Your Koyeb Postgres Host from Step 1>
+    DATABASE_USER=<Your Koyeb User from Step 1>
+    DATABASE_PASSWORD=<Your Koyeb Password from Step 1>
+    DATABASE_NAME=koyebdb
+    DATABASE_PORT=5432
+    SECRET_KEY=<Make up a long random string, e.g., your-super-secret-key-12345>
+    ```
+    
+    **Example:**
+    ```
+    DATABASE_HOST=ep-patient-wind-a1phbzpe.ap-southeast-1.pg.koyeb.app
+    DATABASE_USER=koyeb-adm
+    DATABASE_PASSWORD=npg_Q1lakOpE5omYXXXXXXXX
+    DATABASE_NAME=koyebdb
+    DATABASE_PORT=5432
+    SECRET_KEY=my-super-secret-random-key-2024
+    ```
 5.  **Build Command:** `pip install -r requirements.txt`
 6.  **Run Command:** `gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:$PORT`
 7.  Click **"Deploy"**.

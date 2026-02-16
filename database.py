@@ -13,9 +13,9 @@ load_dotenv()
 import urllib.parse as urlparse
 
 # HARDCODED FALLBACK FOR KOYEB POSTGRES
-db_host = os.getenv("DATABASE_HOST", os.getenv("DB_HOST", "ep-patient-wind-a1phbzpe.ap-southeast-1.pg.koyeb.app"))
+db_host = os.getenv("DATABASE_HOST", os.getenv("DB_HOST", "ep-gentle-hat-agcpn3l9.c-2.eu-central-1.pg.koyeb.app"))
 db_user = os.getenv("DATABASE_USER", os.getenv("DB_USER", "koyeb-adm"))
-db_pass = os.getenv("DATABASE_PASSWORD", os.getenv("DB_PASSWORD", "npg_Q1lakOpE5omY"))
+db_pass = os.getenv("DATABASE_PASSWORD", os.getenv("DB_PASSWORD", "npg_g8MvPfqjw1lO"))
 db_port = os.getenv("DATABASE_PORT", os.getenv("DB_PORT", "5432"))
 db_name = os.getenv("DATABASE_NAME", os.getenv("DB_NAME", "koyebdb"))
 
@@ -51,17 +51,30 @@ def init_pool():
     except Exception as e:
         print(f"Pool Init Error: {e}")
 
+# Global checks
+last_error = None
+try:
+    import psycopg2
+except ImportError:
+    last_error = "psycopg2-binary not installed in environment"
+    psycopg2 = None
+
 def get_db_connection():
+    global last_error
     try:
         # Postgres Logic (Cloud)
         if "pg.koyeb.app" in db_config["host"]:
+             if not psycopg2:
+                 raise ImportError("psycopg2 module not found")
+                 
              return psycopg2.connect(
                 host=db_config["host"],
                 database=db_name,
                 user=db_config["user"],
                 password=db_config["password"],
                 port=db_config["port"],
-                sslmode='require'
+                sslmode='require',
+                connect_timeout=10
             )
         
         # MySQL Logic (Local/TiDB)
@@ -72,6 +85,7 @@ def get_db_connection():
                 return mysql.connector.connect(database=db_name, **db_config)
         return mysql.connector.connect(database=db_name, **db_config)
     except Exception as e:
+        last_error = str(e)
         print(f"DATABASE CONNECTION ERROR: {e}")
         return None
 
