@@ -866,11 +866,14 @@
                 const data = JSON.parse(e.data);
                 if (data.type === 'match_found') {
                     peerId = data.peer_id;
-                    document.getElementById('status').innerText = peerId === 0 ? 'AI PROTOCOL LINKED' : 'SECURE P2P LINKED';
-                    document.getElementById('chat-partner').innerText = peerId === 0 ? 'Stranger (AI)' : 'STRANGER CONNECTED';
-                    document.getElementById('p2p-status').innerText = peerId === 0 ? 'Verified AI Presence' : 'Encrypted P2P Active';
-                    addSystemMsg(peerId === 0 ? "🤖 BOT TUNNEL ESTABLISHED. Start chatting." : "⚡ P2P TUNNEL ESTABLISHED. Start chatting.");
-                    if (peerId !== 0) initWebRTC(); // Only start WebRTC for humans
+                    // MASK BOT PRESENCE - Always show P2P/Human status
+                    document.getElementById('status').innerText = 'SECURE P2P LINKED';
+                    document.getElementById('chat-partner').innerText = 'Stranger';
+                    document.getElementById('p2p-status').innerText = 'Encrypted P2P Active';
+                    addSystemMsg("⚡ P2P TUNNEL ESTABLISHED. Start chatting.");
+
+                    if (peerId !== 0) initWebRTC(); // WebRTC on if human
+                    // If peerId is 0 (Bot), we just use WebSocket (already handled), but UI looks like P2P.
                 } else if (data.type === 'active_users') { updateMap(data.users); }
                 else if (data.type === 'bot_typing') {
                     document.getElementById('typing-status').style.display = data.state ? 'block' : 'none';
