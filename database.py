@@ -7,34 +7,23 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Database Configuration
-# KOYEB CLOUD: FORCE NEW DATABASE (Ignore old Env Vars)
+# KOYEB CLOUD: STRICTLY HARDCODED (No Env Vars)
 import urllib.parse as urlparse
 
-# NEW CREDENTIALS (EU REGION)
-NEW_HOST = "ep-gentle-hat-agcpn3l9.c-2.eu-central-1.pg.koyeb.app"
-NEW_PASS = "npg_g8MvPfqjw1lO"
+# NEW CREDENTIALS (EU REGION) - FORCED
+db_host = "ep-gentle-hat-agcpn3l9.c-2.eu-central-1.pg.koyeb.app"
+db_user = "koyeb-adm"
+db_pass = "npg_g8MvPfqjw1lO"
+db_port = 5432
+db_name = "koyebdb"
 
-# Check if Env Var is the OLD one, if so, ignore it
-env_host = os.getenv("DATABASE_HOST", "")
-if "ep-patient-wind" in env_host:
-    print("⚠️  DETECTED OLD CONFIGURATION. FORCING NEW DATABASE.")
-    db_host = NEW_HOST
-    db_pass = NEW_PASS
-else:
-    # Use Env Var if it's new, otherwise default to new
-    db_host = os.getenv("DATABASE_HOST", NEW_HOST)
-    db_pass = os.getenv("DATABASE_PASSWORD", NEW_PASS)
-
-db_user = os.getenv("DATABASE_USER", "koyeb-adm")
-db_port = os.getenv("DATABASE_PORT", "5432")
-db_name = os.getenv("DATABASE_NAME", "koyebdb")
-
+# Force configuration - Allow NO overrides
 db_config = {
     "host": db_host,
     "user": db_user,
     "password": db_pass,
-    "port": int(db_port),
-    "ssl_disabled": False 
+    "port": int(db_port)
+    # sslmode is handled in connection logic
 }
 
 # PRO TIP: Postgres uses 'sslmode', MySQL uses 'ssl_mode'
