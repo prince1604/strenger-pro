@@ -542,42 +542,65 @@
         async function login() {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('password').value;
-            const res = await fetch('/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password: pass })
-            });
-            const data = await res.json();
-            if (res.ok && data.access_token) {
-                token = data.access_token;
-                document.getElementById('auth-overlay').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('auth-overlay').style.display = 'none';
-                    startApp();
-                }, 300);
-            } else { proNotify("ACCESS DENIED: " + (data.detail || "Invalid Credentials"), "error"); }
+
+            try {
+                const res = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password: pass })
+                });
+
+                const data = await res.json();
+
+                if (res.ok && data.access_token) {
+                    token = data.access_token;
+                    document.getElementById('auth-overlay').style.opacity = '0';
+                    setTimeout(() => {
+                        document.getElementById('auth-overlay').style.display = 'none';
+                        startApp();
+                    }, 300);
+                } else {
+                    proNotify("ACCESS DENIED: " + (data.detail || "Invalid Credentials"), "error");
+                }
+            } catch (e) {
+                console.error(e);
+                proNotify("LOGIN ERROR: Network or Server Issue", "error");
+            }
         }
 
         async function register() {
-            const data = {
+            const payload = {
                 username: document.getElementById('reg-user').value,
                 email: document.getElementById('reg-email').value,
                 password: document.getElementById('reg-pass').value,
                 gender: document.getElementById('reg-gender').value,
                 avatar_type: 'default'
             };
-            const res = await fetch('/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            if (res.ok) {
-                const result = await res.json();
-                token = result.access_token;
-                proNotify("IDENTITY CREATED: Welcome to Strenger Pro", "success");
-                document.getElementById('auth-overlay').style.display = 'none';
-                startApp();
-            } else { proNotify("REGISTRATION FAILED: Identity exists or invalid data", "error"); }
+
+            try {
+                const response = await fetch('/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    token = data.access_token;
+                    proNotify("IDENTITY CREATED: Welcome to Strenger Pro", "success");
+                    document.getElementById('auth-overlay').style.opacity = '0';
+                    setTimeout(() => {
+                        document.getElementById('auth-overlay').style.display = 'none';
+                        startApp();
+                    }, 300);
+                } else {
+                    proNotify(`REGISTRATION FAILED: ${data.detail || 'Unknown Error'}`, "error");
+                }
+            } catch (e) {
+                console.error(e);
+                proNotify("REGISTRATION ERROR: Network or Server Issue", "error");
+            }
         }
 
         function toggleAuth() {
@@ -587,26 +610,34 @@
 
         /* APP CORE */
         function startApp() {
-            payload_id = JSON.parse(atob(token.split('.')[1])).id;
-            navigator.geolocation.getCurrentPosition(pos => {
-                myLocation = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-                initMap(); initWS();
-            }, () => {
-                addSystemMsg("⚠️ GPS UNAVAILABLE: Using default node.");
-                initMap(); initWS();
-            });
+            try {
+                payload_id = JSON.parse(atob(token.split('.')[1])).id;
+                navigator.geolocation.getCurrentPosition(pos => {
+                    myLocation = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+                    initMap(); initWS();
+                }, () => {
+                    addSystemMsg("⚠️ GPS UNAVAILABLE: Using default node.");
+                    initMap(); initWS();
+                });
 
-            // HEARTBEAT (5s)
-            setInterval(() => {
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type: 'ping', ts: Date.now() }));
-                }
-            }, 5000);
+                // HEARTBEAT (5s)
+                setInterval(() => {
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ type: 'ping', ts: Date.now() }));
+                    }
+                }, 5000);
+            } catch (e) {
+                console.error("APP START ERROR:", e);
+                proNotify("Error starting app. Please try refreshing.", "error");
+            }
         }
 
         function initWS() {
             if (ws) ws.close();
-            ws = new WebSocket(`ws://${location.host}/ws/${token}`);
+            // Use wss:// if on https
+            const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${location.host}/ws/${token}`);
+
             ws.onopen = () => {
                 document.getElementById('status').innerText = 'PROXIMITY SEARCH ACTIVE';
                 addSystemMsg("🛰️ DISCOVERY PROTOCOL INITIALIZED. Searching...");
@@ -639,9 +670,8 @@
                     document.getElementById('p2p-status').style.display = data.state ? 'none' : 'block';
                 }
                 else if (data.type === 'chat_msg' && data.peer_id === 0) {
-                    document.getElementById('typing-status').style.display = 'none';
-                    document.getElementById('p2p-status').style.display = 'block';
                     addMsg(data.text, 'received');
+                    document.getElementById('typing-status').style.display = 'none';
                 } else if (data.type === 'pong') {
                     const latency = Date.now() - data.ts;
                     document.getElementById('ping').innerText = `${latency}ms`;

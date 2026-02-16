@@ -102,6 +102,30 @@ async def get_index():
         logger.error(f"UI LOAD ERROR: {e}")
         return HTMLResponse(content="<h1>Critical UI Error. Check logs.</h1>", status_code=500)
 
+# --- HEALTH CHECK ENDPOINT ---
+@app.get("/health")
+async def health_check():
+    conn = get_db_connection()
+    status = "online" if conn else "offline"
+    
+    # Get masked config for debugging
+    config_debug = {k: v for k, v in db_config.items()}
+    if config_debug.get("password"):
+        config_debug["password"] = "*****" + config_debug["password"][-3:] if len(config_debug["password"]) > 3 else "***"
+        
+    from database import last_error
+    response = {
+        "status": status,
+        "database_host": config_debug.get("host"),
+        "last_db_error": last_error,
+        "region": "EU" if "eu-central" in str(config_debug.get("host")) else "Unknown",
+        "timestamp": datetime.datetime.utcnow().isoformat()
+    }
+    
+    if conn:
+        conn.close()
+    return response
+
 # --- CORE BUSINESS LOGIC (REG/LOGIN) ---
 @app.post("/register", response_model=Token)
 async def register(user: UserRegister):
