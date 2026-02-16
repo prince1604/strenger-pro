@@ -9,15 +9,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Database Configuration
-# KOYEB CLOUD: Prioritize DATABASE_URL or Postgres variables
+# KOYEB CLOUD: Hardcoded defaults for immediate fix
 import urllib.parse as urlparse
 
-# HARDCODED FALLBACK FOR KOYEB POSTGRES
-db_host = os.getenv("DATABASE_HOST", os.getenv("DB_HOST", "ep-gentle-hat-agcpn3l9.c-2.eu-central-1.pg.koyeb.app"))
-db_user = os.getenv("DATABASE_USER", os.getenv("DB_USER", "koyeb-adm"))
-db_pass = os.getenv("DATABASE_PASSWORD", os.getenv("DB_PASSWORD", "npg_g8MvPfqjw1lO"))
-db_port = os.getenv("DATABASE_PORT", os.getenv("DB_PORT", "5432"))
-db_name = os.getenv("DATABASE_NAME", os.getenv("DB_NAME", "koyebdb"))
+# HARDCODED FALLBACK FOR KOYEB POSTGRES (EU REGION)
+db_host = os.getenv("DATABASE_HOST", "ep-gentle-hat-agcpn3l9.c-2.eu-central-1.pg.koyeb.app")
+db_user = os.getenv("DATABASE_USER", "koyeb-adm")
+db_pass = os.getenv("DATABASE_PASSWORD", "npg_g8MvPfqjw1lO")
+db_port = os.getenv("DATABASE_PORT", "5432")
+db_name = os.getenv("DATABASE_NAME", "koyebdb")
 
 db_config = {
     "host": db_host,
