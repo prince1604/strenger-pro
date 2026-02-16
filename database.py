@@ -105,26 +105,16 @@ def init_db():
     logger = logging.getLogger("StrengerPro")
     logger.info("--- Cloud-Ready Database Sync ---")
     try:
-        # AIVEN CLOUD FIX: Do not try to create DB if on cloud
-        if db_config["host"] != "localhost":
-            logger.info(f"CLOUD MODE: Using existing database '{db_name}'")
-            conn = mysql.connector.connect(database=db_name, **db_config)
-        else:
-            # Localhost logic (creates DB if missing)
-            try:
-                conn = mysql.connector.connect(database=db_name, **db_config)
-            except:
-                logger.info(f"Database {db_name} not found. Attempting creation...")
-                conn = mysql.connector.connect(**db_config)
-                cursor = conn.cursor()
-                cursor.execute(f"CREATE DATABASE IF NOT EXISTS {db_name}")
-                conn.commit()
-                cursor.close()
-                conn = mysql.connector.connect(database=db_name, **db_config)
-
+        # 1. PRIORITY: Check for PostgreSQL (Koyeb/Cloud)
         if "pg.koyeb.app" in db_config["host"]:
              # POSTGRES SYNC
             logger.info("--- POSTGRES SCHEMA SYNC ---")
+            
+            # Ensure psycopg2 is available
+            if not psycopg2:
+                logger.error("PSYGOPG2 MISSING during init_db")
+                return
+
             conn = psycopg2.connect(
                 host=db_config["host"],
                 database=db_name,
@@ -134,16 +124,44 @@ def init_db():
                 sslmode='require'
             )
             cursor = conn.cursor()
-            with open("schema_pg.sql", "r") as f:
-                cursor.execute(f.read())
-            conn.commit()
+            
+            # Create schema from file
+            if os.path.exists("schema_pg.sql"):
+                with open("schema_pg.sql", "r") as f:
+                    cursor.execute(f.read())
+                conn.commit()
+                logger.info("POSTGRES DB READY")
+            else:
+                logger.warning("schema_pg.sql NOT FOUND - Skipping schema sync")
+                
             cursor.close()
             conn.close()
-            logger.info("POSTGRES DB READY")
             return
 
-        # 2. Run Schema (MySQL)
+        # 2. Check for AIVEN/Remote MySQL (Non-Localhost)
+        if db_config["host"] != "localhost":
+            logger.info(f"CLOUD MODE (MySQL): Using existing database '{db_name}'")
+            # Just verify connection, don't create DB
+            conn = mysql.connector.connect(database=db_name, **db_config)
+            conn.close()
+        
+        # 3. Localhost MySQL (Create DB if missing)
+        else:
+            try:
+                conn = mysql.connector.connect(database=db_name, **db_config)
+                conn.close()
+            except:
+                logger.info(f"Database {db_name} not found. Attempting creation...")
+                conn = mysql.connector.connect(**db_config)
+                cursor = conn.cursor()
+                cursor.execute(f"CREATE DATABASE IF NOT EXISTS {db_name}")
+                conn.commit()
+                cursor.close()
+                conn.close()
+
+        # 4. Run Schema (MySQL Only)
         conn = mysql.connector.connect(database=db_name, **db_config)
+
         cursor = conn.cursor()
         with open("schema.sql", "r") as f:
             schema = f.read()
