@@ -116,7 +116,8 @@ def init_db():
                 user=db_config["user"],
                 password=db_config["password"],
                 port=db_config["port"],
-                sslmode='require'
+                sslmode='require',
+                connect_timeout=10
             )
             cursor = conn.cursor()
             
