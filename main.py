@@ -366,16 +366,20 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                         await manager.send_personal_message(json.dumps({"type": "match_found", "peer_id": peer_id}), user_id)
                         await manager.send_personal_message(json.dumps({"type": "match_found", "peer_id": user_id}), peer_id)
                     else:
-                        # NO MATCH FOUND: User remains in 'searching' status
-                        # The system will wait for another user to search and find this user.
+                        # NO HUMAN FOUND: Pair with BOT transparently
+                        # User will NOT know they're talking to a bot
+                        logger.info(f"BOT-MATCH: {user_id} paired with AI (User unaware)")
+                        cursor.execute("UPDATE active_sessions SET status='chatting' WHERE user_id = %s", (user_id,))
+                        conn.commit()
+                        # Send match found with peer_id = 0 (bot indicator, but user won't see this)
                         await manager.send_personal_message(json.dumps({
-                            "type": "searching_active",
-                            "message": "Waiting for a human partner..."
+                            "type": "match_found",  
+                            "peer_id": 0,  # 0 indicates bot, but UI treats it like any stranger
+                            "is_bot": True  # Internal flag, not shown to user
                         }), user_id)
                     
                     await manager.broadcast_active_users()
                     
-                    await manager.broadcast_active_users()
                 except Exception as e:
                     logger.error(f"MESH-ENGINE ERROR: {e}")
                 finally:

@@ -386,9 +386,34 @@
             border-radius: 10px;
         }
 
-        /* MOBILE RESPONSIVENESS */
-        /* RUGGED MOBILE RESPONSIVENESS */
-        /* RUGGED MOBILE RESPONSIVENESS - HAMBURGER DRAWER STYLE */
+        /* System Message Styling */
+        .system-msg {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--accent);
+            padding: 12px 16px;
+            background: var(--glass);
+            border-radius: 12px;
+            margin: 12px 0;
+            border: 1px solid var(--glass-border);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* PERFECT RESPONSIVE DESIGN FOR ALL DEVICES */
+
+        /* Tablet (Portrait & Landscape) */
         @media screen and (max-width: 1024px) {
             .app-container {
                 flex-direction: column !important;
@@ -404,16 +429,15 @@
                 left: 0;
                 height: 100vh !important;
                 width: 85% !important;
-                max-width: 320px;
+                max-width: 340px;
                 background: rgba(20, 22, 32, 0.98) !important;
                 backdrop-filter: blur(20px);
                 z-index: 1000;
-                transform: translateX(-105%);
-                /* Hidden by default */
-                transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                transform: translateX(-100%);
+                transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
                 border-right: 1px solid var(--glass-border);
-                padding-top: 20px;
-                box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+                padding: 20px 16px;
+                box-shadow: 10px 0 40px rgba(0, 0, 0, 0.6);
                 display: flex;
                 flex-direction: column;
             }
@@ -429,12 +453,12 @@
                 left: 0;
                 width: 100%;
                 height: 100%;
-                background: rgba(0, 0, 0, 0.6);
+                background: rgba(0, 0, 0, 0.65);
                 z-index: 999;
                 opacity: 0;
                 pointer-events: none;
-                transition: opacity 0.3s;
-                backdrop-filter: blur(2px);
+                transition: opacity 0.3s ease;
+                backdrop-filter: blur(3px);
             }
 
             .sidebar.active+.sidebar-overlay {
@@ -444,74 +468,210 @@
 
             .logo-area {
                 display: flex !important;
-                margin-bottom: 20px;
+                margin-bottom: 18px;
+                padding: 8px;
                 justify-content: space-between;
                 align-items: center;
             }
 
             .logo-area::after {
                 content: '✕';
-                font-size: 1.5rem;
+                font-size: 1.6rem;
                 color: var(--text-dim);
                 cursor: pointer;
+                padding: 8px;
+                transition: color 0.2s;
+            }
+
+            .logo-area::after:hover {
+                color: var(--accent);
             }
 
             /* Chat: Full Screen */
             .chat-view {
                 width: 100% !important;
                 height: 100vh !important;
-                border-radius: 0;
-                margin-top: 0;
-                order: 2;
+                border-radius: 0 !important;
+                margin: 0 !important;
                 position: relative;
                 z-index: 10;
             }
 
-            .map-card {
-                height: 250px !important;
-                margin-bottom: 15px;
+            .chat-header {
+                padding: 12px 16px !important;
+                flex-wrap: nowrap;
             }
 
-            /* Scrollable Stats */
+            .map-card {
+                height: 220px !important;
+                margin-bottom: 12px;
+                border-radius: 16px;
+            }
+
             .stats-box {
                 display: flex;
                 flex-wrap: wrap;
                 gap: 8px;
-                margin-bottom: 10px;
+                margin-bottom: 12px;
             }
 
             .stat-item {
-                width: 48%;
+                width: calc(50% - 4px);
                 margin-bottom: 0;
-                padding: 12px;
+                padding: 10px;
+                font-size: 0.85rem;
+            }
+
+            .stat-label {
+                font-size: 0.7rem !important;
+            }
+
+            .stat-value {
+                font-size: 0.75rem !important;
             }
 
             /* Toggle Button in Header */
             .menu-btn {
-                display: block !important;
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+                min-width: 44px;
+                min-height: 44px;
             }
 
-            /* Auth Overlay Fix */
+            /* Auth Overlay */
             .auth-card {
-                width: 95% !important;
-                padding: 20px !important;
+                width: 90% !important;
+                max-width: 400px !important;
+                padding: 30px 24px !important;
                 margin: 0 auto;
-                max-height: 85vh;
+                max-height: 90vh;
+                overflow-y: auto;
             }
 
             .input-bar {
-                padding: 10px;
-                padding-bottom: max(10px, env(safe-area-inset-bottom));
+                padding: 12px;
+                padding-bottom: max(12px, env(safe-area-inset-bottom));
                 background: var(--panel);
+                gap: 12px;
             }
 
             input {
-                height: 44px !important;
+                height: 48px !important;
                 font-size: 16px !important;
+                padding: 12px 18px !important;
             }
 
             .btn {
-                height: 44px !important;
+                height: 48px !important;
+                padding: 0 24px !important;
+                font-size: 0.9rem !important;
+            }
+
+            .messages-container {
+                padding: 16px 12px !important;
+            }
+
+            .msg {
+                max-width: 85% !important;
+                padding: 12px 16px !important;
+                font-size: 0.95rem !important;
+            }
+
+            .system-msg {
+                font-size: 0.8rem !important;
+                padding: 10px 14px !important;
+                margin: 10px 0 !important;
+            }
+        }
+
+        /* Mobile (Large Phones) */
+        @media screen and (max-width: 768px) {
+            .sidebar {
+                max-width: 300px !important;
+            }
+
+            .partner-info {
+                gap: 8px !important;
+            }
+
+            .avatar {
+                width: 36px !important;
+                height: 36px !important;
+            }
+
+            #chat-partner {
+                font-size: 1rem !important;
+            }
+
+            .toast {
+                min-width: 280px !important;
+                font-size: 0.85rem !important;
+                padding: 14px 18px !important;
+            }
+        }
+
+        /* Mobile (Small Phones) */
+        @media screen and (max-width: 480px) {
+            .sidebar {
+                width: 90% !important;
+                max-width: 280px !important;
+            }
+
+            .auth-card {
+                width: 95% !important;
+                padding: 24px 18px !important;
+            }
+
+            .logo-icon {
+                width: 45px !important;
+                height: 45px !important;
+                font-size: 1.3rem !important;
+            }
+
+            h2 {
+                font-size: 1.3rem !important;
+            }
+
+            .stat-item {
+                width: 100% !important;
+            }
+
+            .map-card {
+                height: 200px !important;
+            }
+
+            .input-bar {
+                padding: 8px !important;
+                gap: 8px !important;
+            }
+
+            .btn {
+                padding: 0 18px !important;
+                font-size: 0.85rem !important;
+            }
+
+            .toast-container {
+                top: 16px !important;
+                right: 16px !important;
+                left: 16px !important;
+            }
+
+            .toast {
+                min-width: auto !important;
+                width: 100% !important;
+            }
+        }
+
+        /* Landscape Mode for Mobile */
+        @media screen and (max-height: 500px) and (orientation: landscape) {
+            .auth-card {
+                max-height: 95vh !important;
+                overflow-y: auto !important;
+            }
+
+            .map-card {
+                height: 150px !important;
             }
         }
     </style>
@@ -569,8 +729,8 @@
 
             <div class="stats-box">
                 <div class="stat-item">
-                    <div class="stat-label">Security Protocol</div>
-                    <div class="stat-value" id="status" style="color: var(--accent);">INITIALIZING SOCKET...</div>
+                    <div class="stat-label">Connection Status</div>
+                    <div class="stat-value" id="status" style="color: var(--accent);">INITIALIZING...</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-label">WebRTC Encryption</div>
@@ -592,7 +752,9 @@
             <header class="chat-header">
                 <!-- Hamburger Button -->
                 <button class="menu-btn" onclick="toggleSideMenu()"
-                    style="display:none; background:transparent; font-size: 1.5rem; padding: 0 10px; margin-right: 5px; border:none; color:white; cursor:pointer;">
+                    style="display:none; background:transparent; font-size: 1.8rem; padding: 8px 12px; margin-right: 10px; border:none; color:white; cursor:pointer; border-radius: 8px; transition: background 0.2s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+                    onmouseout="this.style.background='transparent'">
                     ☰
                 </button>
                 <div class="partner-info">
@@ -601,7 +763,7 @@
                         <div id="chat-partner" style="font-weight: 700; font-size: 1.2rem;">Ready for Matching</div>
                         <div id="typing-status" style="font-size: 0.8rem; color: var(--accent); display: none;">Stranger
                             is typing...</div>
-                        <div id="p2p-status" style="font-size: 0.8rem; color: #00b894;">Encrypted P2P Active</div>
+                        <div id="p2p-status" style="font-size: 0.8rem; color: #00b894;">Secure Connection Active</div>
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 10px;">
@@ -898,8 +1060,8 @@
             ws = new WebSocket(`${protocol}//${location.host}/ws/${token}`);
 
             ws.onopen = () => {
-                document.getElementById('status').innerText = 'PROXIMITY SEARCH ACTIVE';
-                addSystemMsg("🛰️ DISCOVERY PROTOCOL INITIALIZED. Searching...");
+                document.getElementById('status').innerText = 'SEARCHING FOR STRANGER';
+                addSystemMsg("\ud83d\udef0\ufe0f Connected to server. Looking for strangers...");
                 ws.send(JSON.stringify({ type: 'search_nearest', lat: myLocation.lat, lon: myLocation.lon }));
             };
 
@@ -918,22 +1080,29 @@
                 const data = JSON.parse(e.data);
                 if (data.type === 'match_found') {
                     peerId = data.peer_id;
-                    // SECURE P2P CONNECTION ESTABLISHED
-                    document.getElementById('status').innerText = 'SECURE P2P LINKED';
+                    // CONNECTION ESTABLISHED (Human or Bot - User doesn't know)
+                    document.getElementById('status').innerText = 'CONNECTED TO STRANGER';
                     document.getElementById('chat-partner').innerText = 'Stranger';
-                    document.getElementById('p2p-status').innerText = 'Encrypted P2P Active';
-                    addSystemMsg("⚡ P2P TUNNEL ESTABLISHED. Start chatting.");
+                    document.getElementById('p2p-status').innerText = 'Secure Connection Active';
+                    addSystemMsg("⚡ Connected to stranger. Start chatting.");
 
-                    initWebRTC(); // Start P2P
-                } else if (data.type === 'active_users') { updateMap(data.users); }
-                else if (data.type === 'partner_typing') {
+                    // Only init WebRTC if it's a human (peer_id > 0)
+                    if (peerId > 0) {
+                        initWebRTC(); // Start P2P
+                    }
+                } else if (data.type === 'active_users') {
+                    updateMap(data.users);
+                }
+                else if (data.type === 'partner_typing' || data.type === 'bot_typing') {
+                    // Show typing indicator for both bot and human (transparent)
                     document.getElementById('typing-status').style.display = data.state ? 'block' : 'none';
                     document.getElementById('p2p-status').style.display = data.state ? 'none' : 'block';
                 }
                 else if (data.type === 'chat_msg') {
-                    // Handle messages via WebSocket (Fallback)
+                    // Handle messages via WebSocket (Works for both bot and fallback)
                     addMsg(data.text, 'received');
                     document.getElementById('typing-status').style.display = 'none';
+                    document.getElementById('p2p-status').style.display = 'block';
                 } else if (data.type === 'pong') {
                     const latency = Date.now() - data.ts;
                     document.getElementById('ping').innerText = `${latency}ms`;
@@ -980,7 +1149,7 @@
             if (!txt) return;
 
             if (peerId === null) {
-                addSystemMsg("🕒 Searching for a partner... Please wait.");
+                addSystemMsg("🕒 Searching for a stranger... Please wait.");
                 // Add a subtle shake to the input to show it didn't send
                 el.style.borderColor = 'var(--danger)';
                 setTimeout(() => el.style.borderColor = 'var(--glass-border)', 500);
@@ -988,7 +1157,7 @@
             }
 
             if (peerId === 0) {
-                // SEND TO BOT VIA SOCKET
+                // SEND TO BOT VIA SOCKET (User doesn't know it's a bot)
                 ws.send(JSON.stringify({ type: 'log_msg', peer_id: 0, text: txt }));
                 addMsg(txt, 'sent');
                 el.value = '';
@@ -999,7 +1168,10 @@
                 addMsg(txt, 'sent');
                 el.value = '';
             } else {
-                addSystemMsg("⚠️ Link is still encrypting... One moment.");
+                // Fallback to WebSocket if WebRTC not ready
+                ws.send(JSON.stringify({ type: 'chat_msg', peer_id: peerId, text: txt }));
+                addMsg(txt, 'sent');
+                el.value = '';
             }
         }
 
@@ -1015,8 +1187,8 @@
 
         function addSystemMsg(t) {
             const div = document.createElement('div');
-            div.style = "text-align: center; font-size: 0.8rem; color: var(--accent); padding: 15px; background: var(--glass); border-radius: 12px; margin: 10px 0; border: 1px solid var(--glass-border);";
-            div.innerHTML = `🛡️ <b>System:</b> ${t}`;
+            div.className = 'system-msg';
+            div.innerHTML = t;
             document.getElementById('messages').appendChild(div);
             const container = document.getElementById('messages');
             container.scrollTop = container.scrollHeight;
@@ -1026,17 +1198,16 @@
             if (peerConn) peerConn.close();
             peerId = null;
             document.getElementById('messages').innerHTML = '';
-            document.getElementById('chat-partner').innerText = 'Re-scanning Area...';
+            document.getElementById('chat-partner').innerText = 'Searching...';
             document.getElementById('typing-status').style.display = 'none';
             document.getElementById('p2p-status').style.display = 'block';
-            document.getElementById('status').innerText = 'PROXIMITY SEARCH ACTIVE';
+            document.getElementById('status').innerText = 'SEARCHING FOR STRANGER';
             document.getElementById('status').style.color = 'var(--accent)';
             ws.send(JSON.stringify({ type: 'search_nearest', lat: myLocation.lat, lon: myLocation.lon }));
         }
 
         window.addEventListener('keydown', (e) => { if (e.key === 'Escape') nextStranger(); });
-            };
-        }
+
 
         /* MOBILE MENU TOGGLE */
         function toggleSideMenu() {
