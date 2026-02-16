@@ -222,11 +222,33 @@ class ConnectionManager:
         from db_helper import get_cursor
         cursor = get_cursor(conn, dict_cursor=True)
         try:
-            cursor.execute("SELECT user_id, latitude as lat, longitude as lon FROM active_sessions")
+            # JOIN users to get username and gender for the map
+            cursor.execute("""
+                SELECT 
+                    s.user_id, 
+                    s.latitude as lat, 
+                    s.longitude as lon,
+                    u.username,
+                    u.gender
+                FROM active_sessions s
+                JOIN users u ON s.user_id = u.id
+            """)
             users = cursor.fetchall()
             # Convert to list of dicts for PostgreSQL compatibility
             if users:
-                msg = json.dumps({"type": "active_users", "users": [dict(u) if hasattr(u, 'items') else u for u in users]})
+                # Ensure we handle both tuple (MySQL) and dict (Postgres RealDictCursor)
+                user_list = []
+                for u in users:
+                    if isinstance(u, dict):
+                        user_list.append(u)
+                    else:
+                        # Fallback for tuple cursor if needed (id, lat, lon, user, gender)
+                        user_list.append({
+                            "user_id": u[0], "lat": u[1], "lon": u[2], 
+                            "username": u[3], "gender": u[4]
+                        })
+                
+                msg = json.dumps({"type": "active_users", "users": user_list})
                 for uid in list(self.active_connections.keys()):
                     await self.send_personal_message(msg, uid)
         finally:
