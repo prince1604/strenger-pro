@@ -387,117 +387,111 @@
         }
 
         /* MOBILE RESPONSIVENESS */
-        @media (max-width: 768px) {
+        /* RUGGED MOBILE RESPONSIVENESS */
+        @media screen and (max-width: 1024px) {
             .app-container {
-                flex-direction: column;
-                height: 100vh;
-                overflow: hidden;
+                flex-direction: column !important;
+                height: 100vh !important;
+                overflow: hidden !important;
             }
 
-            /* Sidebar on Top (Map + Stats) */
+            /* Sidebar: Top Panel (Map + Stats) */
             .sidebar {
-                width: 100%;
-                height: auto;
+                width: 100% !important;
+                height: auto !important;
+                flex: none !important;
                 max-height: 40vh;
                 order: 1;
                 padding: 10px;
-                border-right: none;
+                border-right: none !important;
                 border-bottom: 1px solid var(--glass-border);
-                flex-shrink: 0;
+                backdrop-filter: blur(10px);
             }
 
-            /* Compact Map */
+            /* Chat: Bottom Panel */
+            .chat-view {
+                order: 2;
+                flex: 1 !important;
+                /* Take remaining height */
+                height: auto !important;
+                border-radius: 20px 20px 0 0;
+                margin-top: -15px;
+                background: var(--bg);
+                border-top: 1px solid var(--glass-border);
+                box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+                z-index: 20;
+                position: relative;
+            }
+
             .map-card {
-                height: 120px;
+                height: 140px !important;
                 margin-bottom: 8px;
                 border-radius: 12px;
             }
 
-            /* Horizontal Scroll Stats */
+            .logo-area {
+                display: none !important;
+            }
+
+            /* Scrollable Stats */
             .stats-box {
                 display: flex;
                 gap: 8px;
                 overflow-x: auto;
                 padding-bottom: 5px;
                 margin-bottom: 0;
-                white-space: nowrap;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                /* Firefox */
             }
+
+            .stats-box::-webkit-scrollbar {
+                display: none;
+            }
+
+            /* Chrome/Safari */
 
             .stat-item {
                 flex: 0 0 auto;
-                width: 120px;
+                width: 110px;
                 margin-bottom: 0;
                 padding: 8px;
-                border-radius: 10px;
+                border-radius: 8px;
             }
 
-            .stat-label {
-                font-size: 0.6rem;
-                margin-bottom: 2px;
-            }
-
-            .stat-value {
-                font-size: 0.8rem;
-            }
-
-            /* Hide Logo to save space */
-            .logo-area {
-                display: none;
-            }
-
-            /* Chat takes remaining space */
-            .chat-view {
-                flex: 1;
-                order: 2;
-                border-radius: 20px 20px 0 0;
-                margin-top: -15px;
-                /* Overlap effect */
-                background: var(--bg);
-                border-top: 1px solid var(--glass-border);
-                box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
-                z-index: 20;
-            }
-
-            /* Authentication Mobile */
+            /* Auth Overlay Fix */
             .auth-card {
-                width: 90%;
-                padding: 24px;
-                max-height: 90vh;
-                overflow-y: auto;
+                width: 95% !important;
+                padding: 20px !important;
+                margin: 0 auto;
+                max-height: 85vh;
             }
 
-            /* Chat Elements */
-            .msg {
-                max-width: 85%;
-                padding: 10px 14px;
-                font-size: 0.9rem;
+            /* Hide Sidebar "Disconnect" Button - Use Header Button Instead */
+            .sidebar .btn-danger {
+                display: none !important;
             }
 
+            /* Chat Inputs */
             .input-bar {
-                padding: 10px;
+                padding: 8px;
+                background: var(--panel);
             }
 
             input {
-                height: 48px;
-                font-size: 0.95rem;
+                height: 44px !important;
+                font-size: 16px !important;
+                /* Prevent Zoom on iOS */
             }
 
             .btn {
-                height: 48px;
-                padding: 0 15px;
-                font-size: 0.85rem;
+                height: 44px !important;
             }
 
-            /* Reposition Disconnect Btn */
-            .btn-danger {
-                position: absolute;
-                bottom: 100px;
-                /* Hidden or moved? */
-                display: none;
-                /* Hide standard disconnect, add icon later? */
+            .msg {
+                font-size: 0.95rem;
+                padding: 8px 12px;
             }
-
-            /* Add floating disconnect button instead? */
         }
     </style>
 </head>
