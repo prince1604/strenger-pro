@@ -227,6 +227,17 @@ class ConnectionManager:
         conn = get_db_connection()
         if not conn: return
         from db_helper import get_cursor
+        from math import radians, cos, sin, asin, sqrt
+
+        def haversine(lon1, lat1, lon2, lat2):
+            # Calculate distance in km
+            lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+            dlon = lon2 - lon1
+            dlat = lat2 - lat1
+            a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+            c = 2 * asin(sqrt(a))
+            return 6371 * c
+
         cursor = get_cursor(conn, dict_cursor=True)
         try:
             # JOIN users to get username and gender for the map
@@ -240,24 +251,51 @@ class ConnectionManager:
                 FROM active_sessions s
                 JOIN users u ON s.user_id = u.id
             """)
-            users = cursor.fetchall()
-            # Convert to list of dicts for PostgreSQL compatibility
-            if users:
-                # Ensure we handle both tuple (MySQL) and dict (Postgres RealDictCursor)
-                user_list = []
-                for u in users:
+            raw_users = cursor.fetchall()
+            
+            # Normalize to list of dicts
+            all_users = []
+            if raw_users:
+                for u in raw_users:
                     if isinstance(u, dict):
-                        user_list.append(u)
+                        d = u
                     else:
-                        # Fallback for tuple cursor if needed (id, lat, lon, user, gender)
-                        user_list.append({
-                            "user_id": u[0], "lat": u[1], "lon": u[2], 
-                            "username": u[3], "gender": u[4]
-                        })
+                        d = {"user_id": u[0], "lat": u[1], "lon": u[2], "username": u[3], "gender": u[4]}
+                    
+                    # Ensure floats
+                    try:
+                        d['lat'] = float(d['lat'])
+                        d['lon'] = float(d['lon'])
+                        all_users.append(d)
+                    except: pass
+            
+            # Send personalized radius update to each connected user
+            # Radius limit: 25 km (Snapchat style visibility)
+            RADIUS_KM = 25.0
+
+            for target_id in list(self.active_connections.keys()):
+                # Find target user's location
+                me = next((u for u in all_users if u['user_id'] == target_id), None)
+                if not me: continue
                 
-                msg = json.dumps({"type": "active_users", "users": user_list})
-                for uid in list(self.active_connections.keys()):
-                    await self.send_personal_message(msg, uid)
+                nearby_users = []
+                for u in all_users:
+                    # Always include self so map centers correctly if needed, or exclude. 
+                    # Usually map shows self.
+                    if u['user_id'] == target_id:
+                        nearby_users.append({**u, "distance": 0, "is_me": True})
+                        continue
+
+                    dist = haversine(me['lon'], me['lat'], u['lon'], u['lat'])
+                    if dist <= RADIUS_KM:
+                        # Append user with calculated distance
+                        nearby_users.append({**u, "distance": round(dist, 1), "is_me": False})
+                
+                msg = json.dumps({"type": "active_users", "users": nearby_users})
+                await self.send_personal_message(msg, target_id)
+
+        except Exception as e:
+            logger.error(f"BROADCAST-ERROR: {e}")
         finally:
             cursor.close()
             conn.close()
