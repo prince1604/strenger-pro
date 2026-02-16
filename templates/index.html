@@ -388,75 +388,107 @@
 
         /* MOBILE RESPONSIVENESS */
         /* RUGGED MOBILE RESPONSIVENESS */
+        /* RUGGED MOBILE RESPONSIVENESS - HAMBURGER DRAWER STYLE */
         @media screen and (max-width: 1024px) {
             .app-container {
                 flex-direction: column !important;
                 height: 100vh !important;
                 overflow: hidden !important;
-            }
-
-            /* Sidebar: Top Panel (Map + Stats) */
-            .sidebar {
-                width: 100% !important;
-                height: auto !important;
-                flex: none !important;
-                max-height: 40vh;
-                order: 1;
-                padding: 10px;
-                border-right: none !important;
-                border-bottom: 1px solid var(--glass-border);
-                backdrop-filter: blur(10px);
-            }
-
-            /* Chat: Bottom Panel */
-            .chat-view {
-                order: 2;
-                flex: 1 !important;
-                /* Take remaining height */
-                height: auto !important;
-                border-radius: 20px 20px 0 0;
-                margin-top: -15px;
-                background: var(--bg);
-                border-top: 1px solid var(--glass-border);
-                box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
-                z-index: 20;
                 position: relative;
             }
 
-            .map-card {
-                height: 140px !important;
-                margin-bottom: 8px;
-                border-radius: 12px;
+            /* Sidebar: Slide-In Drawer */
+            .sidebar {
+                position: fixed !important;
+                top: 0;
+                left: 0;
+                height: 100vh !important;
+                width: 85% !important;
+                max-width: 320px;
+                background: rgba(20, 22, 32, 0.98) !important;
+                backdrop-filter: blur(20px);
+                z-index: 1000;
+                transform: translateX(-105%);
+                /* Hidden by default */
+                transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                border-right: 1px solid var(--glass-border);
+                padding-top: 20px;
+                box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+                display: flex;
+                flex-direction: column;
+            }
+
+            .sidebar.active {
+                transform: translateX(0) !important;
+            }
+
+            /* Overlay when sidebar open */
+            .sidebar-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.6);
+                z-index: 999;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.3s;
+                backdrop-filter: blur(2px);
+            }
+
+            .sidebar.active+.sidebar-overlay {
+                opacity: 1;
+                pointer-events: auto;
             }
 
             .logo-area {
-                display: none !important;
+                display: flex !important;
+                margin-bottom: 20px;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .logo-area::after {
+                content: '✕';
+                font-size: 1.5rem;
+                color: var(--text-dim);
+                cursor: pointer;
+            }
+
+            /* Chat: Full Screen */
+            .chat-view {
+                width: 100% !important;
+                height: 100vh !important;
+                border-radius: 0;
+                margin-top: 0;
+                order: 2;
+                position: relative;
+                z-index: 10;
+            }
+
+            .map-card {
+                height: 250px !important;
+                margin-bottom: 15px;
             }
 
             /* Scrollable Stats */
             .stats-box {
                 display: flex;
+                flex-wrap: wrap;
                 gap: 8px;
-                overflow-x: auto;
-                padding-bottom: 5px;
-                margin-bottom: 0;
-                -webkit-overflow-scrolling: touch;
-                scrollbar-width: none;
-                /* Firefox */
+                margin-bottom: 10px;
             }
-
-            .stats-box::-webkit-scrollbar {
-                display: none;
-            }
-
-            /* Chrome/Safari */
 
             .stat-item {
-                flex: 0 0 auto;
-                width: 110px;
+                width: 48%;
                 margin-bottom: 0;
-                padding: 8px;
-                border-radius: 8px;
+                padding: 12px;
+            }
+
+            /* Toggle Button in Header */
+            .menu-btn {
+                display: block !important;
             }
 
             /* Auth Overlay Fix */
@@ -467,36 +499,26 @@
                 max-height: 85vh;
             }
 
-            /* Hide Sidebar "Disconnect" Button - Use Header Button Instead */
-            .sidebar .btn-danger {
-                display: none !important;
-            }
-
-            /* Chat Inputs */
             .input-bar {
-                padding: 8px;
+                padding: 10px;
+                padding-bottom: max(10px, env(safe-area-inset-bottom));
                 background: var(--panel);
             }
 
             input {
                 height: 44px !important;
                 font-size: 16px !important;
-                /* Prevent Zoom on iOS */
             }
 
             .btn {
                 height: 44px !important;
-            }
-
-            .msg {
-                font-size: 0.95rem;
-                padding: 8px 12px;
             }
         }
     </style>
 </head>
 
 <body>
+    <div class="sidebar-overlay" onclick="toggleSideMenu()"></div>
     <div id="toast-container" class="toast-container"></div>
     <!-- AUTHENTICATION OVERLAY -->
     <div id="auth-overlay">
@@ -568,6 +590,11 @@
         <!-- CHAT INTERFACE -->
         <main class="chat-view">
             <header class="chat-header">
+                <!-- Hamburger Button -->
+                <button class="menu-btn" onclick="toggleSideMenu()"
+                    style="display:none; background:transparent; font-size: 1.5rem; padding: 0 10px; margin-right: 5px; border:none; color:white; cursor:pointer;">
+                    ☰
+                </button>
                 <div class="partner-info">
                     <div class="avatar"><span class="status-dot"></span></div>
                     <div>
@@ -891,20 +918,20 @@
                 const data = JSON.parse(e.data);
                 if (data.type === 'match_found') {
                     peerId = data.peer_id;
-                    // MASK BOT PRESENCE - Always show P2P/Human status
+                    // SECURE P2P CONNECTION ESTABLISHED
                     document.getElementById('status').innerText = 'SECURE P2P LINKED';
                     document.getElementById('chat-partner').innerText = 'Stranger';
                     document.getElementById('p2p-status').innerText = 'Encrypted P2P Active';
                     addSystemMsg("⚡ P2P TUNNEL ESTABLISHED. Start chatting.");
 
-                    if (peerId !== 0) initWebRTC(); // WebRTC on if human
-                    // If peerId is 0 (Bot), we just use WebSocket (already handled), but UI looks like P2P.
+                    initWebRTC(); // Start P2P
                 } else if (data.type === 'active_users') { updateMap(data.users); }
-                else if (data.type === 'bot_typing') {
+                else if (data.type === 'partner_typing') {
                     document.getElementById('typing-status').style.display = data.state ? 'block' : 'none';
                     document.getElementById('p2p-status').style.display = data.state ? 'none' : 'block';
                 }
-                else if (data.type === 'chat_msg' && data.peer_id === 0) {
+                else if (data.type === 'chat_msg') {
+                    // Handle messages via WebSocket (Fallback)
                     addMsg(data.text, 'received');
                     document.getElementById('typing-status').style.display = 'none';
                 } else if (data.type === 'pong') {
@@ -1008,6 +1035,26 @@
         }
 
         window.addEventListener('keydown', (e) => { if (e.key === 'Escape') nextStranger(); });
+            };
+        }
+
+        /* MOBILE MENU TOGGLE */
+        function toggleSideMenu() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+
+            // Refresh map when sidebar opens (give CSS time to transition)
+            if (sidebar.classList.contains('active')) {
+                setTimeout(() => {
+                    if (map) map.invalidateSize();
+                }, 400);
+            }
+        }
+
+        /* Close menu specifically via logo close button */
+        document.querySelector('.logo-area').addEventListener('click', () => {
+            document.querySelector('.sidebar').classList.remove('active');
+        });
     </script>
 </body>
 
