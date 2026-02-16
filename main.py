@@ -321,26 +321,14 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                         await manager.send_personal_message(json.dumps({"type": "match_found", "peer_id": peer_id}), user_id)
                         await manager.send_personal_message(json.dumps({"type": "match_found", "peer_id": user_id}), peer_id)
                     else:
-                        # ZERO-WAIT AI BOT FALLBACK
-                        logger.info(f"BOT-MATCH: Scaling up for User {user_id} (No neighbors found)")
-                        # peer_id = 0 represents the system bot
+                        # NO MATCH FOUND: User remains in 'searching' status
+                        # The system will wait for another user to search and find this user.
                         await manager.send_personal_message(json.dumps({
-                            "type": "match_found", 
-                            "peer_id": 0,
-                            "system": True,
-                            "bot_name": "Stranger"
+                            "type": "searching_active",
+                            "message": "Waiting for a human partner..."
                         }), user_id)
-                        
-                        # Send initial bot greeting with a small delay
-                        await asyncio.sleep(1)
-                        greeting = random.choice(bot_brain.greetings)
-                        await manager.send_personal_message(json.dumps({
-                            "type": "bot_typing", "state": True
-                        }), user_id)
-                        await asyncio.sleep(1.5)
-                        await manager.send_personal_message(json.dumps({
-                            "type": "chat_msg", "peer_id": 0, "text": greeting, "from": "stranger"
-                        }), user_id)
+                    
+                    await manager.broadcast_active_users()
                     
                     await manager.broadcast_active_users()
                 except Exception as e:

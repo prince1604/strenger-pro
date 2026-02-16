@@ -385,6 +385,120 @@
             background: #ffffff10;
             border-radius: 10px;
         }
+
+        /* MOBILE RESPONSIVENESS */
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            /* Sidebar on Top (Map + Stats) */
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 40vh;
+                order: 1;
+                padding: 10px;
+                border-right: none;
+                border-bottom: 1px solid var(--glass-border);
+                flex-shrink: 0;
+            }
+
+            /* Compact Map */
+            .map-card {
+                height: 120px;
+                margin-bottom: 8px;
+                border-radius: 12px;
+            }
+
+            /* Horizontal Scroll Stats */
+            .stats-box {
+                display: flex;
+                gap: 8px;
+                overflow-x: auto;
+                padding-bottom: 5px;
+                margin-bottom: 0;
+                white-space: nowrap;
+            }
+
+            .stat-item {
+                flex: 0 0 auto;
+                width: 120px;
+                margin-bottom: 0;
+                padding: 8px;
+                border-radius: 10px;
+            }
+
+            .stat-label {
+                font-size: 0.6rem;
+                margin-bottom: 2px;
+            }
+
+            .stat-value {
+                font-size: 0.8rem;
+            }
+
+            /* Hide Logo to save space */
+            .logo-area {
+                display: none;
+            }
+
+            /* Chat takes remaining space */
+            .chat-view {
+                flex: 1;
+                order: 2;
+                border-radius: 20px 20px 0 0;
+                margin-top: -15px;
+                /* Overlap effect */
+                background: var(--bg);
+                border-top: 1px solid var(--glass-border);
+                box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
+                z-index: 20;
+            }
+
+            /* Authentication Mobile */
+            .auth-card {
+                width: 90%;
+                padding: 24px;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+
+            /* Chat Elements */
+            .msg {
+                max-width: 85%;
+                padding: 10px 14px;
+                font-size: 0.9rem;
+            }
+
+            .input-bar {
+                padding: 10px;
+            }
+
+            input {
+                height: 48px;
+                font-size: 0.95rem;
+            }
+
+            .btn {
+                height: 48px;
+                padding: 0 15px;
+                font-size: 0.85rem;
+            }
+
+            /* Reposition Disconnect Btn */
+            .btn-danger {
+                position: absolute;
+                bottom: 100px;
+                /* Hidden or moved? */
+                display: none;
+                /* Hide standard disconnect, add icon later? */
+            }
+
+            /* Add floating disconnect button instead? */
+        }
     </style>
 </head>
 
@@ -469,11 +583,25 @@
                         <div id="p2p-status" style="font-size: 0.8rem; color: #00b894;">Encrypted P2P Active</div>
                     </div>
                 </div>
-                <div
-                    style="background: var(--glass); padding: 10px 20px; border-radius: 30px; font-size: 0.8rem; border: 1px solid var(--glass-border);">
-                    Latency: <span id="ping" style="color: var(--accent);">8ms</span>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button class="btn btn-danger mobile-next-btn" onclick="nextStranger()"
+                        style="height: 38px; padding: 0 15px; font-size: 0.8rem; display: none;">
+                        NEXT ➔
+                    </button>
+                    <div
+                        style="background: var(--glass); padding: 10px 20px; border-radius: 30px; font-size: 0.8rem; border: 1px solid var(--glass-border);">
+                        Latency: <span id="ping" style="color: var(--accent);">8ms</span>
+                    </div>
                 </div>
             </header>
+
+            <style>
+                @media (max-width: 768px) {
+                    .mobile-next-btn {
+                        display: block !important;
+                    }
+                }
+            </style>
 
             <div class="messages-container" id="messages">
                 <!-- MESSAGES -->
