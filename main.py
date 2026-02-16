@@ -132,6 +132,13 @@ async def health_check():
 async def register(user: UserRegister):
     logger.info(f"PROTOCOL-REG: {user.username} is requesting entry.")
     
+    import re
+    if len(user.password) < 6:
+        raise HTTPException(status_code=400, detail="Password too short (min 6 characters).")
+    
+    if not re.match(r"[^@]+@[^@]+\.[^@]+", user.email):
+         raise HTTPException(status_code=400, detail="Invalid email format.")
+    
     conn = get_db_connection()
     if not conn:
         from database import last_error
