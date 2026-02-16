@@ -3,94 +3,28 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Strenger Pro | High-Speed Proximity Chat</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Strenger Pro | Premium Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
     <style>
         :root {
             --bg: #05060a;
-            --panel: rgba(20, 22, 32, 0.95);
+            --panel: #11121a;
             --accent: #6c5ce7;
-            --accent-glow: rgba(108, 92, 231, 0.4);
+            --accent-light: #a29bfe;
             --text: #ffffff;
-            --text-dim: #a0a0b0;
-            --danger: #ff5e57;
-            --glass: rgba(255, 255, 255, 0.03);
+            --text-dim: #8e8e93;
+            --danger: #ff3b30;
+            --glass: rgba(255, 255, 255, 0.05);
             --glass-border: rgba(255, 255, 255, 0.1);
-        }
-
-        /* Premium Notification System */
-        .toast-container {
-            position: fixed;
-            top: 24px;
-            right: 24px;
-            z-index: 10000;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            pointer-events: none;
-        }
-
-        .toast {
-            min-width: 320px;
-            background: rgba(25, 27, 40, 0.9);
-            backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid var(--glass-border);
-            padding: 18px 24px;
-            border-radius: 12px;
-            color: var(--text);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
-            animation: toast-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-            pointer-events: auto;
-            border-left: 5px solid var(--accent);
-            font-size: 0.95rem;
-            font-weight: 500;
-        }
-
-        .toast.error {
-            border-left-color: var(--danger);
-            box-shadow: 0 15px 40px rgba(255, 94, 87, 0.15);
-        }
-
-        .toast.success {
-            border-left-color: #00b894;
-            box-shadow: 0 15px 40px rgba(0, 184, 148, 0.15);
-        }
-
-        @keyframes toast-in {
-            from {
-                transform: translateX(120%) scale(0.9);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateX(0) scale(1);
-                opacity: 1;
-            }
-        }
-
-        @keyframes toast-out {
-            from {
-                transform: translateX(0) scale(1);
-                opacity: 1;
-            }
-
-            to {
-                transform: translateX(120%) scale(0.9);
-                opacity: 0;
-            }
-        }
-
-        .toast.hiding {
-            animation: toast-out 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            --snap-pill: rgba(28, 28, 30, 0.95);
         }
 
         * {
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body,
@@ -104,1128 +38,511 @@
             overflow: hidden;
         }
 
-        /* Animated Background */
-        body::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at 50% 50%, #1a1b2e 0%, #05060a 100%);
-            z-index: -1;
-        }
-
+        /* --- MOBILE SIDEBAR DRAWER SYSTEM --- */
         .app-container {
             display: flex;
             height: 100vh;
+            width: 100vw;
+            position: relative;
         }
 
-        /* Navigation Sidebar */
         .sidebar {
-            width: 360px;
+            width: 340px;
             background: var(--panel);
             border-right: 1px solid var(--glass-border);
             display: flex;
             flex-direction: column;
-            padding: 24px;
-            box-shadow: 10px 0 40px rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(20px);
-            z-index: 10;
+            padding: 20px;
+            z-index: 2000;
+            transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        /* Mobile View Sidebar Logic */
+        @media (max-width: 850px) {
+            .sidebar {
+                position: fixed;
+                height: 100%;
+                transform: translateX(-100%);
+                width: 85%;
+                max-width: 320px;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+                box-shadow: 20px 0 50px rgba(0, 0, 0, 0.8);
+            }
         }
 
         .logo-area {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 30px;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
+
+        .logo-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .logo-icon {
-            width: 42px;
-            height: 42px;
+            width: 38px;
+            height: 38px;
             background: var(--accent);
-            border-radius: 12px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 25px var(--accent-glow);
-            font-weight: 700;
-            font-size: 1.3rem;
+            font-weight: 800;
+            font-size: 1.2rem;
         }
 
+        /* --- SNAP MAP UI --- */
         .map-card {
-            height: 260px;
-            background: #000;
-            border-radius: 20px;
-            border: 1px solid var(--glass-border);
+            height: 300px;
+            border-radius: 24px;
             overflow: hidden;
             position: relative;
-            margin-bottom: 24px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
         }
 
         #map {
             height: 100%;
             width: 100%;
+            background: #000;
         }
 
-        .stat-item {
-            background: var(--glass);
-            border-radius: 14px;
-            padding: 18px;
-            margin-bottom: 15px;
-            border: 1px solid var(--glass-border);
-            transition: 0.3s;
-        }
-
-        .stat-item:hover {
-            border-color: var(--accent);
-        }
-
-        .stat-label {
-            font-size: 0.7rem;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 8px;
-        }
-
-        .stat-value {
-            font-size: 1rem;
+        .map-header {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: var(--snap-pill);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
             font-weight: 600;
-            color: #fff;
+            border: 1px solid var(--glass-border);
+            white-space: nowrap;
         }
 
-        /* Modern Chat Interface */
+        .snap-marker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .avatar-container {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.5));
+        }
+
+        .snap-label {
+            background: var(--snap-pill);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 4px 14px;
+            border-radius: 18px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-top: -5px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-12px);
+            }
+        }
+
+        /* --- CHAT VIEW UI --- */
         .chat-view {
             flex: 1;
             display: flex;
             flex-direction: column;
-            background: rgba(0, 0, 0, 0.1);
-        }
-
-        .chat-header {
-            padding: 25px 40px;
-            border-bottom: 1px solid var(--glass-border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            backdrop-filter: blur(10px);
-            background: rgba(5, 6, 10, 0.5);
-        }
-
-        .partner-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
-            background: #2d3436;
-            border: 2px solid var(--glass-border);
+            background: var(--bg);
             position: relative;
         }
 
-        .status-dot {
-            position: absolute;
-            bottom: -3px;
-            right: -3px;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            border: 3px solid #161821;
-            background: #00b894;
+        .chat-header {
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 1px solid var(--glass-border);
+            background: rgba(5, 6, 10, 0.7);
+            backdrop-filter: blur(20px);
+            z-index: 1500;
+        }
+
+        /* Hamburger Button */
+        .menu-toggle {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .partner-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: #222;
+            overflow: hidden;
+        }
+
+        .partner-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .messages-container {
             flex: 1;
             overflow-y: auto;
-            padding: 40px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 10px;
+            background: radial-gradient(circle at top right, #12121a, #05060a);
         }
 
         .msg {
-            max-width: 65%;
-            padding: 14px 22px;
+            max-width: 80%;
+            padding: 12px 18px;
             border-radius: 20px;
             font-size: 0.95rem;
-            line-height: 1.5;
-            animation: slideUp 0.3s ease-out forwards;
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            line-height: 1.4;
+            position: relative;
         }
 
         .msg.sent {
             align-self: flex-end;
-            background: var(--accent);
+            background: linear-gradient(135deg, var(--accent), #5849d1);
             border-bottom-right-radius: 4px;
-            box-shadow: 0 8px 25px var(--accent-glow);
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
         }
 
         .msg.received {
             align-self: flex-start;
-            background: #1a1c27;
-            border-bottom-left-radius: 4px;
+            background: #1c1c1e;
             border: 1px solid var(--glass-border);
+            border-bottom-left-radius: 4px;
         }
 
-        .input-bar {
-            padding: 30px 40px;
-            background: rgba(5, 6, 10, 0.8);
+        /* --- SNAP-STYLE INPUT BAR --- */
+        .input-area {
+            padding: 15px 20px;
+            background: #05060a;
             display: flex;
-            gap: 20px;
-            border-top: 1px solid var(--glass-border);
+            align-items: center;
+            gap: 12px;
+            padding-bottom: max(15px, env(safe-area-inset-bottom));
         }
 
         .input-wrapper {
             flex: 1;
-            position: relative;
+            background: #1c1c1e;
+            border-radius: 25px;
+            padding: 2px 15px;
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--glass-border);
         }
 
-        input {
-            width: 100%;
-            background: #12141d;
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
+        .input-wrapper input {
+            flex: 1;
+            background: transparent;
+            border: none;
             color: white;
-            padding: 18px 24px;
+            height: 44px;
             outline: none;
-            transition: 0.3s;
             font-size: 1rem;
         }
 
-        input:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 5px var(--accent-glow);
-        }
-
-        .btn {
-            padding: 0 35px;
-            border-radius: 16px;
-            border: none;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.3s;
-            height: 60px;
-            font-size: 0.9rem;
-            letter-spacing: 0.5px;
-        }
-
-        .btn-primary {
+        .send-btn {
+            width: 44px;
+            height: 44px;
             background: var(--accent);
-            color: white;
-            box-shadow: 0 5px 20px var(--accent-glow);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
         }
 
-        .btn-primary:hover {
-            filter: brightness(1.15);
-            transform: translateY(-2px);
+        .send-btn:active {
+            transform: scale(0.9);
         }
 
-        .btn-danger {
-            background: #12141d;
-            color: var(--danger);
-            border: 2px solid rgba(255, 94, 87, 0.2);
+        .stat-card {
+            background: var(--glass);
+            border-radius: 15px;
+            padding: 14px;
+            margin-bottom: 10px;
+            border: 1px solid var(--glass-border);
         }
 
-        .btn-danger:hover {
-            background: var(--danger);
-            color: white;
+        .stat-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
         }
 
-        /* Auth Experience */
-        #auth-overlay {
+        .stat-val {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        #overlay-back {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1900;
+            display: none;
+            backdrop-filter: blur(4px);
+        }
+
+        /* Auth Screen */
+        #auth-screen {
             position: fixed;
             inset: 0;
             background: var(--bg);
-            z-index: 1000;
+            z-index: 5000;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        .auth-card {
-            width: 440px;
-            background: #161821;
-            border-radius: 28px;
-            padding: 50px;
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
-        }
-
-        .auth-card input {
-            margin-bottom: 16px;
-            background: #0a0b10;
-            border: 1px solid #ffffff10;
-        }
-
-        .auth-card .btn {
-            width: 100%;
-            margin-top: 10px;
-        }
-
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #ffffff10;
-            border-radius: 10px;
-        }
-
-        /* System Message Styling */
-        .system-msg {
+        .auth-box {
+            width: 90%;
+            max-width: 380px;
             text-align: center;
-            font-size: 0.85rem;
-            color: var(--accent);
-            padding: 12px 16px;
-            background: var(--glass);
-            border-radius: 12px;
-            margin: 12px 0;
+        }
+
+        .auth-input {
+            width: 100%;
+            background: #1c1c1e;
             border: 1px solid var(--glass-border);
-            animation: fadeIn 0.3s ease;
+            border-radius: 15px;
+            padding: 18px;
+            color: white;
+            margin-bottom: 12px;
+            font-size: 16px;
+            outline: none;
         }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* PERFECT RESPONSIVE DESIGN FOR ALL DEVICES */
-
-        /* Tablet (Portrait & Landscape) */
-        @media screen and (max-width: 1024px) {
-            .app-container {
-                flex-direction: column !important;
-                height: 100vh !important;
-                overflow: hidden !important;
-                position: relative;
-            }
-
-            /* Sidebar: Slide-In Drawer */
-            .sidebar {
-                position: fixed !important;
-                top: 0;
-                left: 0;
-                height: 100vh !important;
-                width: 85% !important;
-                max-width: 340px;
-                background: rgba(20, 22, 32, 0.98) !important;
-                backdrop-filter: blur(20px);
-                z-index: 1000;
-                transform: translateX(-100%);
-                transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-                border-right: 1px solid var(--glass-border);
-                padding: 20px 16px;
-                box-shadow: 10px 0 40px rgba(0, 0, 0, 0.6);
-                display: flex;
-                flex-direction: column;
-            }
-
-            .sidebar.active {
-                transform: translateX(0) !important;
-            }
-
-            /* Overlay when sidebar open */
-            .sidebar-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.65);
-                z-index: 999;
-                opacity: 0;
-                pointer-events: none;
-                transition: opacity 0.3s ease;
-                backdrop-filter: blur(3px);
-            }
-
-            .sidebar.active+.sidebar-overlay {
-                opacity: 1;
-                pointer-events: auto;
-            }
-
-            .logo-area {
-                display: flex !important;
-                margin-bottom: 18px;
-                padding: 8px;
-                justify-content: space-between;
-                align-items: center;
-            }
-
-            .logo-area::after {
-                content: '✕';
-                font-size: 1.6rem;
-                color: var(--text-dim);
-                cursor: pointer;
-                padding: 8px;
-                transition: color 0.2s;
-            }
-
-            .logo-area::after:hover {
-                color: var(--accent);
-            }
-
-            /* Chat: Full Screen */
-            .chat-view {
-                width: 100% !important;
-                height: 100vh !important;
-                border-radius: 0 !important;
-                margin: 0 !important;
-                position: relative;
-                z-index: 10;
-            }
-
-            .chat-header {
-                padding: 12px 16px !important;
-                flex-wrap: nowrap;
-            }
-
-            .map-card {
-                height: 220px !important;
-                margin-bottom: 12px;
-                border-radius: 16px;
-            }
-
-            .stats-box {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 8px;
-                margin-bottom: 12px;
-            }
-
-            .stat-item {
-                width: calc(50% - 4px);
-                margin-bottom: 0;
-                padding: 10px;
-                font-size: 0.85rem;
-            }
-
-            .stat-label {
-                font-size: 0.7rem !important;
-            }
-
-            .stat-value {
-                font-size: 0.75rem !important;
-            }
-
-            /* Toggle Button in Header */
-            .menu-btn {
-                display: flex !important;
-                align-items: center;
-                justify-content: center;
-                min-width: 44px;
-                min-height: 44px;
-            }
-
-            /* Auth Overlay */
-            .auth-card {
-                width: 90% !important;
-                max-width: 400px !important;
-                padding: 30px 24px !important;
-                margin: 0 auto;
-                max-height: 90vh;
-                overflow-y: auto;
-            }
-
-            .input-bar {
-                padding: 12px;
-                padding-bottom: max(12px, env(safe-area-inset-bottom));
-                background: var(--panel);
-                gap: 12px;
-            }
-
-            input {
-                height: 48px !important;
-                font-size: 16px !important;
-                padding: 12px 18px !important;
-            }
-
-            .btn {
-                height: 48px !important;
-                padding: 0 24px !important;
-                font-size: 0.9rem !important;
-            }
-
-            .messages-container {
-                padding: 16px 12px !important;
-            }
-
-            .msg {
-                max-width: 85% !important;
-                padding: 12px 16px !important;
-                font-size: 0.95rem !important;
-            }
-
-            .system-msg {
-                font-size: 0.8rem !important;
-                padding: 10px 14px !important;
-                margin: 10px 0 !important;
-            }
-        }
-
-        /* Mobile (Large Phones) */
-        @media screen and (max-width: 768px) {
-            .sidebar {
-                max-width: 300px !important;
-            }
-
-            .partner-info {
-                gap: 8px !important;
-            }
-
-            .avatar {
-                width: 36px !important;
-                height: 36px !important;
-            }
-
-            #chat-partner {
-                font-size: 1rem !important;
-            }
-
-            .toast {
-                min-width: 280px !important;
-                font-size: 0.85rem !important;
-                padding: 14px 18px !important;
-            }
-        }
-
-        /* Mobile (Small Phones) */
-        @media screen and (max-width: 480px) {
-            .sidebar {
-                width: 90% !important;
-                max-width: 280px !important;
-            }
-
-            .auth-card {
-                width: 95% !important;
-                padding: 24px 18px !important;
-            }
-
-            .logo-icon {
-                width: 45px !important;
-                height: 45px !important;
-                font-size: 1.3rem !important;
-            }
-
-            h2 {
-                font-size: 1.3rem !important;
-            }
-
-            .stat-item {
-                width: 100% !important;
-            }
-
-            .map-card {
-                height: 200px !important;
-            }
-
-            .input-bar {
-                padding: 8px !important;
-                gap: 8px !important;
-            }
-
-            .btn {
-                padding: 0 18px !important;
-                font-size: 0.85rem !important;
-            }
-
-            .toast-container {
-                top: 16px !important;
-                right: 16px !important;
-                left: 16px !important;
-            }
-
-            .toast {
-                min-width: auto !important;
-                width: 100% !important;
-            }
-        }
-
-        /* Landscape Mode for Mobile */
-        @media screen and (max-height: 500px) and (orientation: landscape) {
-            .auth-card {
-                max-height: 95vh !important;
-                overflow-y: auto !important;
-            }
-
-            .map-card {
-                height: 150px !important;
-            }
+        .leaflet-control-attribution,
+        .leaflet-control-zoom {
+            display: none !important;
         }
     </style>
 </head>
 
 <body>
-    <div class="sidebar-overlay" onclick="toggleSideMenu()"></div>
-    <div id="toast-container" class="toast-container"></div>
-    <!-- AUTHENTICATION OVERLAY -->
-    <div id="auth-overlay">
-        <div class="auth-card">
-            <div class="logo-icon" style="margin: 0 auto 20px;">S</div>
-            <h2 id="auth-title" style="text-align: center; margin-bottom: 30px;">Strenger Pro</h2>
 
-            <div id="login-view">
-                <input type="text" id="email" placeholder="Email or Username">
-                <input type="password" id="password" placeholder="Password">
-                <button class="btn btn-primary" onclick="login()">Enter Discovery Mode</button>
-                <p style="text-align: center; margin-top: 25px; color: var(--text-dim); font-size: 0.9rem;">
-                    Don't have a secure key? <a href="#" onclick="toggleAuth()"
-                        style="color: var(--accent); text-decoration: none;">Register Now</a>
-                </p>
-            </div>
-
-            <div id="register-view" style="display: none;">
-                <input type="text" id="reg-user" placeholder="Nickname">
-                <input type="email" id="reg-email" placeholder="Secure Email">
-                <input type="password" id="reg-pass" placeholder="Strong Password">
-                <select id="reg-gender"
-                    style="width: 100%; background: #0a0b10; color: white; border: 1px solid #ffffff10; padding: 18px; border-radius: 16px; margin-bottom: 20px;">
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                </select>
-                <button class="btn btn-primary" onclick="register()">Create identity</button>
-                <p style="text-align: center; margin-top: 25px; color: var(--text-dim); font-size: 0.9rem;">
-                    Back to base? <a href="#" onclick="location.reload()"
-                        style="color: var(--accent); text-decoration: none;">Login</a>
-                </p>
-            </div>
+    <div id="auth-screen">
+        <div class="auth-box">
+            <div class="logo-icon" style="margin: 0 auto 20px; width: 60px; height: 60px; font-size: 2rem;">S</div>
+            <h1 style="margin-bottom: 30px;">Strenger Pro</h1>
+            <input type="text" class="auth-input" placeholder="Enter Nickname">
+            <button class="send-btn" style="width: 100%; border-radius: 15px; font-weight: 700; color: white;"
+                onclick="enterApp()">START CHATTING</button>
         </div>
     </div>
 
+    <div id="overlay-back" onclick="toggleSidebar()"></div>
+
     <div class="app-container">
-        <!-- SIDE NAVIGATION -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="logo-area">
-                <div class="logo-icon">S</div>
-                <h1 style="font-size: 1.5rem; margin: 0; font-weight: 700;">Strenger Pro</h1>
+                <div class="logo-box">
+                    <div class="logo-icon">S</div>
+                    <span style="font-weight: 700; font-size: 1.1rem;">STRENGER PRO</span>
+                </div>
+                <button class="menu-toggle" onclick="toggleSidebar()"
+                    style="background: none; border: none; font-size: 24px;">✕</button>
             </div>
 
             <div class="map-card">
+                <div class="map-header">📍 My Neighborhood</div>
                 <div id="map"></div>
             </div>
 
-            <div class="stats-box">
-                <div class="stat-item">
-                    <div class="stat-label">Connection Status</div>
-                    <div class="stat-value" id="status" style="color: var(--accent);">INITIALIZING...</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">WebRTC Encryption</div>
-                    <div class="stat-value" style="color: #00b894;">AES-256-GCM ACTIVE</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Nearby Discovery</div>
-                    <div class="stat-value" id="nearby-count">SCANNING AREA...</div>
-                </div>
+            <div class="stat-card">
+                <div class="stat-label">Security</div>
+                <div class="stat-val" style="color: #34c759;">E2E Encryption Active</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Discovery</div>
+                <div id="nearby-count" class="stat-val">Scanning Area...</div>
             </div>
 
-            <button class="btn btn-danger" onclick="nextStranger()" style="width: 100%; margin-top: auto;">
-                DISCONNECT (ESC)
+            <button class="send-btn" onclick="nextMatch()"
+                style="margin-top: auto; width: 100%; border-radius: 15px; background: #1c1c1e; color: var(--danger); font-size: 14px; font-weight: 600; height: 50px; border: 1px solid rgba(255,59,48,0.2);">
+                SKIP STRANGER (ESC)
             </button>
         </aside>
 
-        <!-- CHAT INTERFACE -->
         <main class="chat-view">
             <header class="chat-header">
-                <!-- Hamburger Button -->
-                <button class="menu-btn" onclick="toggleSideMenu()"
-                    style="display:none; background:transparent; font-size: 1.8rem; padding: 8px 12px; margin-right: 10px; border:none; color:white; cursor:pointer; border-radius: 8px; transition: background 0.2s;"
-                    onmouseover="this.style.background='rgba(255,255,255,0.1)'"
-                    onmouseout="this.style.background='transparent'">
-                    ☰
-                </button>
-                <div class="partner-info">
-                    <div class="avatar"><span class="status-dot"></span></div>
-                    <div>
-                        <div id="chat-partner" style="font-weight: 700; font-size: 1.2rem;">Ready for Matching</div>
-                        <div id="typing-status" style="font-size: 0.8rem; color: var(--accent); display: none;">Stranger
-                            is typing...</div>
-                        <div id="p2p-status" style="font-size: 0.8rem; color: #00b894;">Secure Connection Active</div>
+                <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                <div class="partner-avatar" id="hdr-avatar">
+                    <img src="https://em-content.zobj.net/source/apple/391/smiling-face-with-heart-eyes_1f60d.png"
+                        alt="">
+                </div>
+                <div style="flex: 1;">
+                    <div id="partner-name" style="font-weight: 700; font-size: 1.1rem;">Searching...</div>
+                    <div style="font-size: 0.7rem; color: #34c759; display: flex; align-items: center; gap: 4px;">
+                        <span style="width: 6px; height: 6px; background: #34c759; border-radius: 50%;"></span> Online
                     </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <button class="btn btn-danger mobile-next-btn" onclick="nextStranger()"
-                        style="height: 38px; padding: 0 15px; font-size: 0.8rem; display: none;">
-                        NEXT ➔
-                    </button>
-                    <div
-                        style="background: var(--glass); padding: 10px 20px; border-radius: 30px; font-size: 0.8rem; border: 1px solid var(--glass-border);">
-                        Latency: <span id="ping" style="color: var(--accent);">8ms</span>
-                    </div>
-                </div>
+                <div id="ping" style="font-size: 0.75rem; color: var(--text-dim);">8ms</div>
             </header>
 
-            <style>
-                @media (max-width: 768px) {
-                    .mobile-next-btn {
-                        display: block !important;
-                    }
-                }
-            </style>
-
             <div class="messages-container" id="messages">
-                <!-- MESSAGES -->
+                <div class="msg received">👋 Hi! Use the map on the left (or in the menu) to see people near you!</div>
             </div>
 
-            <div class="input-bar">
+            <div class="input-area">
                 <div class="input-wrapper">
-                    <input type="text" id="msg-input" placeholder="Initiate conversation..."
+                    <input type="text" id="msg-input" placeholder="Send a Snap chat..."
                         onkeydown="if(event.key=='Enter') sendMsg()">
                 </div>
-                <button class="btn btn-primary" onclick="sendMsg()">BROADCAST</button>
+                <button class="send-btn" onclick="sendMsg()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
             </div>
         </main>
     </div>
 
-    <!-- SCRIPTS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        let ws, token, peerId, peerConn, dataChannel, map;
-        let myLocation = { lat: 0, lon: 0 };
-        let markers = {};
-        let payload_id = null;
+        let map, markers = {};
+        let myLoc = { lat: 28.6139, lon: 77.2090 };
 
-        const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] };
+        // Local Avatar Images
+        const ASSETS = {
+            male: "/static/imges/man.png",
+            female: "/static/imges/girl.png"
+        };
 
-        /* GEOLOCATION & MAP */
-        /* SNAP MAP STYLE VISUALIZATION */
-        const AVATAR_MALE = '/static/imges/man.png';
-        const AVATAR_FEMALE = '/static/imges/girl.png';
+        function enterApp() {
+            document.getElementById('auth-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('auth-screen').style.display = 'none';
+                initMap();
+
+                // Ready for real backend data via WebSocket
+                // Backend will send: updateMap([{id, lat, lon, gender, name}, ...])
+
+                // Example: Simulate backend (remove this in production)
+                // setTimeout(() => {
+                //     updateMap([
+                //         { id: 1, lat: 28.6145, lon: 77.2100, gender: 'male', name: 'User123' },
+                //         { id: 2, lat: 28.6130, lon: 77.2085, gender: 'female', name: 'User456' }
+                //     ]);
+                // }, 1000);
+            }, 400);
+        }
+
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            const ov = document.getElementById('overlay-back');
+            sb.classList.toggle('active');
+            ov.style.display = sb.classList.contains('active') ? 'block' : 'none';
+            if (map) setTimeout(() => map.invalidateSize(), 400);
+        }
 
         function initMap() {
-            if (!map) {
-                // 1. Dark Theme Map
-                map = L.map('map', { zoomControl: false }).setView([myLocation.lat, myLocation.lon], 15);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                    maxZoom: 20
-                }).addTo(map);
+            map = L.map('map', { zoomControl: false }).setView([myLoc.lat, myLoc.lon], 15);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-                // 2. Add "ME" Marker (Pulse Effect)
-                const myIcon = L.divIcon({
-                    className: 'me-marker',
-                    html: `<div class="pulse-ring"></div><div class="me-dot"></div>`,
-                    iconSize: [20, 20],
-                    iconAnchor: [10, 10]
-                });
-                markers['me'] = L.marker([myLocation.lat, myLocation.lon], { icon: myIcon }).addTo(map).bindPopup("<b>YOU</b>");
+            // Me Marker
+            createMarker(myLoc.lat, myLoc.lon, 'You', 'male', true);
+        }
 
-                // Inject CSS specific to map
-                const style = document.createElement('style');
-                style.innerHTML = `
-                    .pulse-ring {
-                        position: absolute; width: 100%; height: 100%; border-radius: 50%;
-                        border: 2px solid #a855f7; animation: pulse 2s infinite;
-                    }
-                    .me-dot {
-                        position: absolute; top:25%; left:25%; width:50%; height:50%; background: #a855f7;
-                        border-radius: 50%; box-shadow: 0 0 10px #a855f7;
-                    }
-                    @keyframes pulse { 0% {transform: scale(0.5); opacity: 1;} 100% {transform: scale(2.5); opacity: 0;} }
-                    
-                    /* BITMOJI STYLE MARKER - ENHANCED */
-                    .avatar-wrapper { 
-                        text-align: center; position: relative; 
-                        transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-                    }
-                    .avatar-wrapper:hover { transform: scale(1.15) translateY(-5px); z-index: 9999 !important; }
-                    
-                    .avatar-bitmoji { 
-                        width: 64px; height: 64px; 
-                        filter: drop-shadow(0 8px 8px rgba(0,0,0,0.6));
-                        position: relative; z-index: 2;
-                        animation: float 3s ease-in-out infinite;
-                    }
-                    
-                    .user-glow {
-                        position: absolute; content: ''; bottom: 10px; left: 15px; width: 34px; height: 34px;
-                        background: radial-gradient(circle, rgba(108,92,231,0.6) 0%, rgba(108,92,231,0) 70%);
-                        z-index: 1; transform: scaleY(0.5);
-                    }
-                    
-                    .avatar-label {
-                        background: rgba(20, 22, 32, 0.85); color: white; padding: 4px 10px; border-radius: 12px;
-                        font-size: 11px; font-weight: 600; margin-top: -10px; display: inline-flex;
-                        align-items: center; gap: 4px; backdrop-filter: blur(4px);
-                        border: 1px solid rgba(255,255,255,0.1); white-space: nowrap;
-                    }
-                    
-                    .user-status-dot { width: 6px; height: 6px; background: #00b894; border-radius: 50%; box-shadow: 0 0 5px #00b894;}
-                    
-                    @keyframes float { 0% {transform: translateY(0px);} 50% {transform: translateY(-5px);} 100% {transform: translateY(0px);} }
-                    /* Line connecting paired users */
-                    .connection-line { stroke-dasharray: 10; animation: dash 30s linear infinite; }
-                    @keyframes dash { to { stroke-dashoffset: 1000; } }
-                `;
-                document.head.appendChild(style);
-            }
+        function createMarker(lat, lon, name, gender, isMe) {
+            const icon = L.divIcon({
+                className: 'snap-icon',
+                html: `
+                    <div class="snap-marker">
+                        <div class="avatar-container">
+                            <img src="${ASSETS[gender]}" class="avatar-img">
+                        </div>
+                        <div class="snap-label">${isMe ? 'Me' : name}</div>
+                    </div>
+                `,
+                iconSize: [70, 90],
+                iconAnchor: [35, 80]
+            });
+            return L.marker([lat, lon], { icon }).addTo(map);
         }
 
         function updateMap(users) {
-            document.getElementById('nearby-count').innerText = `${users.length} NEIGHBORS ONLINE`;
-
-            // Remove old markers (except 'me')
-            Object.keys(markers).forEach(k => {
-                if (k !== 'me') map.removeLayer(markers[k]);
-            });
-
+            Object.values(markers).forEach(m => map.removeLayer(m));
+            markers = {};
             users.forEach(u => {
-                if (u.user_id != payload_id) {
-                    // Choose Avatar based on Gender
-                    const avatarUrl = (u.gender && u.gender.toLowerCase() === 'female') ? AVATAR_FEMALE : AVATAR_MALE;
-
-                    const icon = L.divIcon({
-                        className: 'avatar-icon',
-                        html: `
-                            <div class="avatar-wrapper">
-                                <div class="user-glow"></div>
-                                <img src="${avatarUrl}" class="avatar-bitmoji">
-                                <div class="avatar-label">
-                                    <span class="user-status-dot"></span>
-                                    ${u.username} <span style="opacity:0.6; margin-left:2px">· ${u.distance !== undefined ? u.distance + 'km' : ''}</span>
-                                </div>
-                            </div>
-                        `,
-                        iconSize: [64, 84],
-                        iconAnchor: [32, 70] // Anchor at feet
-                    });
-
-                    const marker = L.marker([u.lat, u.lon], { icon: icon }).addTo(map);
-
-                    // Interaction
-                    marker.on('click', () => {
-                        proNotify(`User: ${u.username}`, 'info');
-                    });
-
-                    markers[u.user_id] = marker;
-
-                    // Draw line if this is my peer
-                    if (peerId === u.user_id) {
-                        const line = L.polyline([[myLocation.lat, myLocation.lon], [u.lat, u.lon]], {
-                            color: '#00b894',
-                            weight: 3,
-                            dashArray: '10, 10',
-                            className: 'connection-line'
-                        }).addTo(map);
-                        markers[`line_${u.user_id}`] = line;
-                    }
-                }
+                markers[u.id] = createMarker(u.lat, u.lon, u.name, u.gender, false);
             });
-        }
-
-        /* Notification Logic */
-        function proNotify(msg, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-
-            const icon = type === 'error' ? '❌' : (type === 'success' ? '✅' : 'ℹ️');
-            toast.innerHTML = `<span>${icon}</span> <span>${msg}</span>`;
-
-            container.appendChild(toast);
-
-            setTimeout(() => {
-                toast.classList.add('hiding');
-                setTimeout(() => toast.remove(), 500);
-            }, 4000);
-        }
-
-        /* AUTH LOGIC */
-        async function login() {
-            const email = document.getElementById('email').value.trim();
-            const pass = document.getElementById('password').value.trim();
-
-            if (!email || !pass) return proNotify("Please enter your credentials", "error");
-
-            try {
-                const res = await fetch('/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password: pass })
-                });
-
-                const data = await res.json();
-
-                if (res.ok && data.access_token) {
-                    token = data.access_token;
-                    document.getElementById('auth-overlay').style.opacity = '0';
-                    setTimeout(() => {
-                        document.getElementById('auth-overlay').style.display = 'none';
-                        startApp();
-                    }, 300);
-                } else {
-                    proNotify("ACCESS DENIED: " + (data.detail || "Invalid Credentials"), "error");
-                }
-            } catch (e) {
-                console.error(e);
-                proNotify("LOGIN ERROR: Network or Server Issue", "error");
-            }
-        }
-
-        async function register() {
-            const payload = {
-                username: document.getElementById('reg-user').value.trim(),
-                email: document.getElementById('reg-email').value.trim(),
-                password: document.getElementById('reg-pass').value.trim(),
-                gender: document.getElementById('reg-gender').value,
-                avatar_type: 'default'
-            };
-
-            // Client-Side Validation
-            if (!payload.username || payload.username.length < 3) return proNotify("Nickname too short (min 3 chars)", "error");
-            if (!payload.email.match(/[^@]+@[^@]+\.[^@]+/)) return proNotify("Please enter a valid email", "error");
-            if (!payload.password || payload.password.length < 6) return proNotify("Password must be at least 6 characters", "error");
-
-            try {
-                const response = await fetch('/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    token = data.access_token;
-                    proNotify("IDENTITY CREATED: Welcome to Strenger Pro", "success");
-                    document.getElementById('auth-overlay').style.opacity = '0';
-                    setTimeout(() => {
-                        document.getElementById('auth-overlay').style.display = 'none';
-                        startApp();
-                    }, 300);
-                } else {
-                    proNotify(`REGISTRATION FAILED: ${data.detail || 'Unknown Error'}`, "error");
-                }
-            } catch (e) {
-                console.error(e);
-                proNotify("REGISTRATION ERROR: Network or Server Issue", "error");
-            }
-        }
-
-        function toggleAuth() {
-            document.getElementById('login-view').style.display = 'none';
-            document.getElementById('register-view').style.display = 'block';
-        }
-
-        /* APP CORE */
-        function startApp() {
-            try {
-                payload_id = JSON.parse(atob(token.split('.')[1])).id;
-                navigator.geolocation.getCurrentPosition(pos => {
-                    myLocation = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-                    initMap(); initWS();
-                }, () => {
-                    addSystemMsg("⚠️ GPS UNAVAILABLE: Using default node.");
-                    initMap(); initWS();
-                });
-
-                // HEARTBEAT (5s)
-                setInterval(() => {
-                    if (ws && ws.readyState === WebSocket.OPEN) {
-                        ws.send(JSON.stringify({ type: 'ping', ts: Date.now() }));
-                    }
-                }, 5000);
-            } catch (e) {
-                console.error("APP START ERROR:", e);
-                proNotify("Error starting app. Please try refreshing.", "error");
-            }
-        }
-
-        function initWS() {
-            if (ws) ws.close();
-            // Use wss:// if on https
-            const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            ws = new WebSocket(`${protocol}//${location.host}/ws/${token}`);
-
-            ws.onopen = () => {
-                document.getElementById('status').innerText = 'SEARCHING FOR STRANGER';
-                addSystemMsg("\ud83d\udef0\ufe0f Connected to server. Looking for strangers...");
-                ws.send(JSON.stringify({ type: 'search_nearest', lat: myLocation.lat, lon: myLocation.lon }));
-            };
-
-            ws.onclose = () => {
-                document.getElementById('status').innerText = 'CONNECTION LOST';
-                document.getElementById('status').style.color = 'var(--danger)';
-                addSystemMsg("🔴 Connection lost. Attempting to reconnect...");
-                setTimeout(initWS, 3000);
-            };
-
-            ws.onerror = (err) => {
-                console.error("Socket Error:", err);
-                document.getElementById('status').innerText = 'NETWORK ERROR';
-            };
-            ws.onmessage = async (e) => {
-                const data = JSON.parse(e.data);
-                if (data.type === 'match_found') {
-                    peerId = data.peer_id;
-                    // CONNECTION ESTABLISHED (Human or Bot - User doesn't know)
-                    document.getElementById('status').innerText = 'CONNECTED TO STRANGER';
-                    document.getElementById('chat-partner').innerText = 'Stranger';
-                    document.getElementById('p2p-status').innerText = 'Secure Connection Active';
-                    addSystemMsg("⚡ Connected to stranger. Start chatting.");
-
-                    // Only init WebRTC if it's a human (peer_id > 0)
-                    if (peerId > 0) {
-                        initWebRTC(); // Start P2P
-                    }
-                } else if (data.type === 'active_users') {
-                    updateMap(data.users);
-                }
-                else if (data.type === 'partner_typing' || data.type === 'bot_typing') {
-                    // Show typing indicator for both bot and human (transparent)
-                    document.getElementById('typing-status').style.display = data.state ? 'block' : 'none';
-                    document.getElementById('p2p-status').style.display = data.state ? 'none' : 'block';
-                }
-                else if (data.type === 'chat_msg') {
-                    // Handle messages via WebSocket (Works for both bot and fallback)
-                    addMsg(data.text, 'received');
-                    document.getElementById('typing-status').style.display = 'none';
-                    document.getElementById('p2p-status').style.display = 'block';
-                } else if (data.type === 'pong') {
-                    const latency = Date.now() - data.ts;
-                    document.getElementById('ping').innerText = `${latency}ms`;
-                }
-
-                if (data.type === 'offer') { handleSignaling(data.offer, 'offer'); }
-                else if (data.type === 'answer') { await peerConn.setRemoteDescription(new RTCSessionDescription(data.answer)); }
-                else if (data.type === 'ice') { await peerConn.addIceCandidate(new RTCIceCandidate(data.candidate)); }
-            };
-        }
-
-        async function handleSignaling(offer, type) {
-            if (!peerConn) initWebRTC();
-            await peerConn.setRemoteDescription(new RTCSessionDescription(offer));
-            const answer = await peerConn.createAnswer();
-            await peerConn.setLocalDescription(answer);
-            ws.send(JSON.stringify({ type: 'answer', answer, peer_id: peerId }));
-        }
-
-        function initWebRTC() {
-            if (peerConn) peerConn.close();
-            peerConn = new RTCPeerConnection(rtcConfig);
-            dataChannel = peerConn.createDataChannel("secure_comms");
-
-            dataChannel.onmessage = (e) => addMsg(e.data, 'received');
-            peerConn.ondatachannel = (e) => {
-                e.channel.onmessage = (ev) => addMsg(ev.data, 'received');
-                dataChannel = e.channel;
-            };
-
-            peerConn.onicecandidate = (e) => {
-                if (e.candidate) ws.send(JSON.stringify({ type: 'ice', candidate: e.candidate, peer_id: peerId }));
-            };
-
-            peerConn.createOffer().then(o => {
-                peerConn.setLocalDescription(o);
-                ws.send(JSON.stringify({ type: 'offer', offer: o, peer_id: peerId }));
-            });
+            document.getElementById('nearby-count').innerText = `${users.length} People Nearby`;
         }
 
         function sendMsg() {
-            const el = document.getElementById('msg-input');
-            const txt = el.value.trim();
-            if (!txt) return;
-
-            if (peerId === null) {
-                addSystemMsg("🕒 Searching for a stranger... Please wait.");
-                // Add a subtle shake to the input to show it didn't send
-                el.style.borderColor = 'var(--danger)';
-                setTimeout(() => el.style.borderColor = 'var(--glass-border)', 500);
-                return;
-            }
-
-            if (peerId === 0) {
-                // SEND TO BOT VIA SOCKET (User doesn't know it's a bot)
-                ws.send(JSON.stringify({ type: 'log_msg', peer_id: 0, text: txt }));
-                addMsg(txt, 'sent');
-                el.value = '';
-            } else if (dataChannel && dataChannel.readyState === 'open') {
-                // SEND TO HUMAN VIA WebRTC
-                dataChannel.send(txt);
-                ws.send(JSON.stringify({ type: 'log_msg', peer_id: peerId, text: txt }));
-                addMsg(txt, 'sent');
-                el.value = '';
-            } else {
-                // Fallback to WebSocket if WebRTC not ready
-                ws.send(JSON.stringify({ type: 'chat_msg', peer_id: peerId, text: txt }));
-                addMsg(txt, 'sent');
-                el.value = '';
-            }
-        }
-
-        function addMsg(text, type) {
-            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const div = document.createElement('div');
-            div.className = `msg ${type}`;
-            div.innerHTML = `${text} <span style="display: block; font-size: 0.65rem; margin-top: 4px; opacity: 0.6; text-align: right;">${time}</span>`;
-            const container = document.getElementById('messages');
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
-        }
-
-        function addSystemMsg(t) {
-            const div = document.createElement('div');
-            div.className = 'system-msg';
-            div.innerHTML = t;
-            document.getElementById('messages').appendChild(div);
+            const inp = document.getElementById('msg-input');
+            if (!inp.value.trim()) return;
+            const msg = document.createElement('div');
+            msg.className = 'msg sent';
+            msg.innerText = inp.value;
+            document.getElementById('messages').appendChild(msg);
+            inp.value = '';
             const container = document.getElementById('messages');
             container.scrollTop = container.scrollHeight;
         }
 
-        function nextStranger() {
-            if (peerConn) peerConn.close();
-            peerId = null;
-            document.getElementById('messages').innerHTML = '';
-            document.getElementById('chat-partner').innerText = 'Searching...';
-            document.getElementById('typing-status').style.display = 'none';
-            document.getElementById('p2p-status').style.display = 'block';
-            document.getElementById('status').innerText = 'SEARCHING FOR STRANGER';
-            document.getElementById('status').style.color = 'var(--accent)';
-            ws.send(JSON.stringify({ type: 'search_nearest', lat: myLocation.lat, lon: myLocation.lon }));
+        function nextMatch() {
+            document.getElementById('messages').innerHTML = '<div class="msg received">Searching for a new stranger...</div>';
+            document.getElementById('partner-name').innerText = 'Searching...';
         }
 
-        window.addEventListener('keydown', (e) => { if (e.key === 'Escape') nextStranger(); });
-
-
-        /* MOBILE MENU TOGGLE */
-        function toggleSideMenu() {
-            const sidebar = document.querySelector('.sidebar');
-            sidebar.classList.toggle('active');
-
-            // Refresh map when sidebar opens (give CSS time to transition)
-            if (sidebar.classList.contains('active')) {
-                setTimeout(() => {
-                    if (map) map.invalidateSize();
-                }, 400);
-            }
-        }
-
-        /* Close menu specifically via logo close button */
-        document.querySelector('.logo-area').addEventListener('click', () => {
-            document.querySelector('.sidebar').classList.remove('active');
-        });
+        window.addEventListener('keydown', e => { if (e.key === 'Escape') nextMatch(); });
     </script>
 </body>
 
