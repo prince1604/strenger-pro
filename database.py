@@ -9,13 +9,25 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Database Configuration
-# KOYEB CLOUD: Hardcoded defaults for immediate fix
+# KOYEB CLOUD: FORCE NEW DATABASE (Ignore old Env Vars)
 import urllib.parse as urlparse
 
-# HARDCODED FALLBACK FOR KOYEB POSTGRES (EU REGION)
-db_host = os.getenv("DATABASE_HOST", "ep-gentle-hat-agcpn3l9.c-2.eu-central-1.pg.koyeb.app")
+# NEW CREDENTIALS (EU REGION)
+NEW_HOST = "ep-gentle-hat-agcpn3l9.c-2.eu-central-1.pg.koyeb.app"
+NEW_PASS = "npg_g8MvPfqjw1lO"
+
+# Check if Env Var is the OLD one, if so, ignore it
+env_host = os.getenv("DATABASE_HOST", "")
+if "ep-patient-wind" in env_host:
+    print("⚠️  DETECTED OLD CONFIGURATION. FORCING NEW DATABASE.")
+    db_host = NEW_HOST
+    db_pass = NEW_PASS
+else:
+    # Use Env Var if it's new, otherwise default to new
+    db_host = os.getenv("DATABASE_HOST", NEW_HOST)
+    db_pass = os.getenv("DATABASE_PASSWORD", NEW_PASS)
+
 db_user = os.getenv("DATABASE_USER", "koyeb-adm")
-db_pass = os.getenv("DATABASE_PASSWORD", "npg_g8MvPfqjw1lO")
 db_port = os.getenv("DATABASE_PORT", "5432")
 db_name = os.getenv("DATABASE_NAME", "koyebdb")
 
