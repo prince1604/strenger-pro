@@ -18,17 +18,15 @@ print("=" * 60)
 print("🔍 KOYEB DATABASE CONNECTION TESTER")
 print("=" * 60)
 
-# Load environment variables
-load_dotenv()
+# Import actual config
+try:
+    from database import db_config, db_name
+except ImportError:
+    print("❌ database.py not found or has errors!")
+    sys.exit(1)
 
-# Get database configuration
-db_config = {
-    "host": os.getenv("DATABASE_HOST", os.getenv("DB_HOST")),
-    "user": os.getenv("DATABASE_USER", os.getenv("DB_USER")),
-    "password": os.getenv("DATABASE_PASSWORD", os.getenv("DB_PASSWORD")),
-    "port": os.getenv("DATABASE_PORT", os.getenv("DB_PORT", "5432")),
-    "database": os.getenv("DATABASE_NAME", os.getenv("DB_NAME")),
-}
+# Shim to match local script expectations
+db_config['database'] = db_name
 
 print("\n📋 Current Configuration:")
 print(f"   Host: {db_config['host']}")
