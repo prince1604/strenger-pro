@@ -92,6 +92,7 @@ bot_brain = AIStranger()
 async def startup_event():
     init_db()
     logger.info("DATABASE SYNCHRONIZED SUCCESSFULLY.")
+    logger.info("VERSION: 3.0 - ALL FIXES APPLIED (Check Deployment)")
 
 @app.get("/", response_class=HTMLResponse)
 async def get_index():
