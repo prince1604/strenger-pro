@@ -386,16 +386,33 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                         status_check = cursor.fetchone()
                         
                         if status_check and status_check.get('status') == 'searching':
-                             # STILL SEARCHING -> No human found -> Assign BOT
-                             logger.info(f"BOT-MATCH: {user_id} paired with AI (Timeout)")
-                             cursor.execute("UPDATE active_sessions SET status='chatting' WHERE user_id = %s", (user_id,))
-                             conn.commit()
+                             # STILL SEARCHING: Try ONE MORE TIME to find a human who might have joined
+                             cursor.execute("""
+                                SELECT user_id FROM active_sessions
+                                WHERE user_id != %s AND status = 'searching'
+                                LIMIT 1
+                             """, (user_id,))
+                             retry_match = cursor.fetchone()
                              
-                             await manager.send_personal_message(json.dumps({
-                                 "type": "match_found",  
-                                 "peer_id": 0,  
-                                 "is_bot": True 
-                             }), user_id)
+                             if retry_match:
+                                 # FOUND HUMAN ON RETRY
+                                 peer_id = retry_match['user_id'] if isinstance(retry_match, dict) else retry_match[0]
+                                 logger.info(f"P2P-MATCH (RETRY): {user_id} <---> {peer_id}")
+                                 cursor.execute("UPDATE active_sessions SET status='chatting' WHERE user_id IN (%s, %s)", (user_id, peer_id))
+                                 conn.commit()
+                                 await manager.send_personal_message(json.dumps({"type": "match_found", "peer_id": peer_id}), user_id)
+                                 await manager.send_personal_message(json.dumps({"type": "match_found", "peer_id": user_id}), peer_id)
+                             else:
+                                 # REALLY NO ONE ONE: Assign BOT
+                                 logger.info(f"BOT-MATCH: {user_id} paired with AI (Timeout)")
+                                 cursor.execute("UPDATE active_sessions SET status='chatting' WHERE user_id = %s", (user_id,))
+                                 conn.commit()
+                                 
+                                 await manager.send_personal_message(json.dumps({
+                                     "type": "match_found",  
+                                     "peer_id": 0,  
+                                     "is_bot": True 
+                                 }), user_id)
                         else:
                              logger.info(f"MATCH-CHECK: User {user_id} was matched by peer during wait.")
                     
