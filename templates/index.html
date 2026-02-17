@@ -971,7 +971,7 @@
                                      onerror="this.onerror=null; this.src='https://avatar.iran.liara.run/public/${u.gender && u.gender.toLowerCase() === 'female' ? 'girl' : 'boy'}'">
                                 <div class="avatar-label">
                                     <span class="user-status-dot"></span>
-                                    ${u.username} <span style="opacity:0.6; margin-left:2px">· ${u.distance !== undefined ? u.distance + 'km' : ''}</span>
+                                    ${u.gender ? (u.gender.charAt(0).toUpperCase() + u.gender.slice(1)) : 'Stranger'} <span style="opacity:0.6; margin-left:2px">· ${u.distance !== undefined ? u.distance + 'km' : ''}</span>
                                 </div>
                             </div>
                         `,
