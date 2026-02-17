@@ -674,6 +674,43 @@
                 height: 150px !important;
             }
         }
+
+        /* --- MOBILE FIXES (Android/iOS) --- */
+        @media screen and (max-width: 768px) {
+            .chat-view {
+                height: 100dvh !important;
+                /* Dynamic Viewport Height */
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+            }
+
+            /* Clean up header clutter */
+            .latency-box {
+                display: none !important;
+            }
+
+            #p2p-status {
+                display: none !important;
+            }
+
+            /* Fix overly large headers */
+            .logo-icon {
+                width: 32px !important;
+                height: 32px !important;
+                font-size: 1rem !important;
+            }
+
+            /* Better message area */
+            .messages-container {
+                padding: 10px 15px !important;
+            }
+
+            .msg {
+                max-width: 88% !important;
+            }
+        }
     </style>
 </head>
 
@@ -759,19 +796,23 @@
                 </button>
                 <div class="partner-info">
                     <div class="avatar"><span class="status-dot"></span></div>
-                    <div>
-                        <div id="chat-partner" style="font-weight: 700; font-size: 1.2rem;">Ready for Matching</div>
-                        <div id="typing-status" style="font-size: 0.8rem; color: var(--accent); display: none;">Stranger
-                            is typing...</div>
-                        <div id="p2p-status" style="font-size: 0.8rem; color: #00b894;">Secure Connection Active</div>
+                    <div style="min-width: 0; overflow: hidden;">
+                        <div id="chat-partner"
+                            style="font-weight: 700; font-size: 1.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            Ready</div>
+                        <div id="typing-status" style="font-size: 0.8rem; color: var(--accent); display: none;">
+                            Typing...</div>
+                        <div id="p2p-status"
+                            style="font-size: 0.8rem; color: #00b894; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            Secure Connection</div>
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <button class="btn btn-danger mobile-next-btn" onclick="nextStranger()"
-                        style="height: 38px; padding: 0 15px; font-size: 0.8rem; display: none;">
+                        style="height: 38px; padding: 0 15px; font-size: 0.8rem; display: none; white-space: nowrap;">
                         NEXT ➔
                     </button>
-                    <div
+                    <div class="latency-box"
                         style="background: var(--glass); padding: 10px 20px; border-radius: 30px; font-size: 0.8rem; border: 1px solid var(--glass-border);">
                         Latency: <span id="ping" style="color: var(--accent);">8ms</span>
                     </div>

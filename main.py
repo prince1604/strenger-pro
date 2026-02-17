@@ -33,6 +33,9 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 1440 # 24 Hours
 
 app = FastAPI(title="Strenger Pro API", version="2.0.0")
 
+# --- STATIC FILES ---
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 # --- AUTH MODELS ---
 class UserRegister(BaseModel):
     username: str
@@ -366,17 +369,28 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                         await manager.send_personal_message(json.dumps({"type": "match_found", "peer_id": peer_id}), user_id)
                         await manager.send_personal_message(json.dumps({"type": "match_found", "peer_id": user_id}), peer_id)
                     else:
-                        # NO HUMAN FOUND: Pair with BOT transparently
-                        # User will NOT know they're talking to a bot
-                        logger.info(f"BOT-MATCH: {user_id} paired with AI (User unaware)")
-                        cursor.execute("UPDATE active_sessions SET status='chatting' WHERE user_id = %s", (user_id,))
-                        conn.commit()
-                        # Send match found with peer_id = 0 (bot indicator, but user won't see this)
-                        await manager.send_personal_message(json.dumps({
-                            "type": "match_found",  
-                            "peer_id": 0,  # 0 indicates bot, but UI treats it like any stranger
-                            "is_bot": True  # Internal flag, not shown to user
-                        }), user_id)
+                        # NO HUMAN FOUND IMMEDIATELY: Wait briefly to see if someone connects
+                        logger.info(f"WAITING: User {user_id} queuing for human match...")
+                        await asyncio.sleep(3) # Short wait to allow human pairing
+                        
+                        # Re-check status to see if we were paired while waiting
+                        conn.commit() # Refresh DB snapshot
+                        cursor.execute("SELECT status FROM active_sessions WHERE user_id = %s", (user_id,))
+                        status_check = cursor.fetchone()
+                        
+                        if status_check and status_check.get('status') == 'searching':
+                             # STILL SEARCHING -> No human found -> Assign BOT
+                             logger.info(f"BOT-MATCH: {user_id} paired with AI (Timeout)")
+                             cursor.execute("UPDATE active_sessions SET status='chatting' WHERE user_id = %s", (user_id,))
+                             conn.commit()
+                             
+                             await manager.send_personal_message(json.dumps({
+                                 "type": "match_found",  
+                                 "peer_id": 0,  
+                                 "is_bot": True 
+                             }), user_id)
+                        else:
+                             logger.info(f"MATCH-CHECK: User {user_id} was matched by peer during wait.")
                     
                     await manager.broadcast_active_users()
                     
