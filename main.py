@@ -376,45 +376,61 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                         await manager.send_personal_message(json.dumps({"type": "match_found", "peer_id": peer_id}), user_id)
                         await manager.send_personal_message(json.dumps({"type": "match_found", "peer_id": user_id}), peer_id)
                     else:
-                        # NO HUMAN FOUND IMMEDIATELY: Wait briefly to see if someone connects
-                        logger.info(f"WAITING: User {user_id} queuing for human match...")
-                        await asyncio.sleep(3) # Short wait to allow human pairing
+                    else:
+                        # NO HUMAN FOUND IMMEDIATELY: ENTER WAIT LOOP
+                        logger.info(f"WAITING: User {user_id} entering retention pool...")
                         
-                        # Re-check status to see if we were paired while waiting
-                        conn.commit() # Refresh DB snapshot
-                        cursor.execute("SELECT status FROM active_sessions WHERE user_id = %s", (user_id,))
-                        status_check = cursor.fetchone()
-                        
-                        if status_check and status_check.get('status') == 'searching':
-                             # STILL SEARCHING: Try ONE MORE TIME to find a human who might have joined
-                             cursor.execute("""
+                        # Try to find a match for 7 seconds before giving up
+                        found_human = False
+                        for _ in range(7):
+                            await asyncio.sleep(1)
+                            
+                            # Check if I was picked up by someone else
+                            conn.commit()
+                            cursor.execute("SELECT status FROM active_sessions WHERE user_id = %s", (user_id,))
+                            me = cursor.fetchone()
+                            if me and me.get('status') != 'searching':
+                                logger.info(f"MATCH-CHECK: User {user_id} was picked up by peer.")
+                                found_human = True
+                                break
+                            
+                            # Check if someone new joined
+                            cursor.execute("""
                                 SELECT user_id FROM active_sessions
                                 WHERE user_id != %s AND status = 'searching'
                                 LIMIT 1
-                             """, (user_id,))
-                             retry_match = cursor.fetchone()
+                            """, (user_id,))
+                            new_peer = cursor.fetchone()
+                            
+                            if new_peer:
+                                peer_id = new_peer['user_id'] if isinstance(new_peer, dict) else new_peer[0]
+                                logger.info(f"P2P-MATCH (DELAYED): {user_id} <---> {peer_id}")
+                                
+                                # Atomic Update Attempt
+                                cursor.execute("""
+                                    UPDATE active_sessions 
+                                    SET status='chatting' 
+                                    WHERE user_id IN (%s, %s) AND status='searching'
+                                """, (user_id, peer_id))
+                                conn.commit()
+                                
+                                if cursor.rowcount == 2:
+                                    await manager.send_personal_message(json.dumps({"type": "match_found", "peer_id": peer_id}), user_id)
+                                    await manager.send_personal_message(json.dumps({"type": "match_found", "peer_id": user_id}), peer_id)
+                                    found_human = True
+                                    break
+                        
+                        if not found_human:
+                             # TIMEOUT REACHED -> DEPLOY BOT
+                             logger.info(f"BOT-MATCH: {user_id} paired with AI (Timeout)")
+                             cursor.execute("UPDATE active_sessions SET status='chatting' WHERE user_id = %s", (user_id,))
+                             conn.commit()
                              
-                             if retry_match:
-                                 # FOUND HUMAN ON RETRY
-                                 peer_id = retry_match['user_id'] if isinstance(retry_match, dict) else retry_match[0]
-                                 logger.info(f"P2P-MATCH (RETRY): {user_id} <---> {peer_id}")
-                                 cursor.execute("UPDATE active_sessions SET status='chatting' WHERE user_id IN (%s, %s)", (user_id, peer_id))
-                                 conn.commit()
-                                 await manager.send_personal_message(json.dumps({"type": "match_found", "peer_id": peer_id}), user_id)
-                                 await manager.send_personal_message(json.dumps({"type": "match_found", "peer_id": user_id}), peer_id)
-                             else:
-                                 # REALLY NO ONE ONE: Assign BOT
-                                 logger.info(f"BOT-MATCH: {user_id} paired with AI (Timeout)")
-                                 cursor.execute("UPDATE active_sessions SET status='chatting' WHERE user_id = %s", (user_id,))
-                                 conn.commit()
-                                 
-                                 await manager.send_personal_message(json.dumps({
-                                     "type": "match_found",  
-                                     "peer_id": 0,  
-                                     "is_bot": True 
-                                 }), user_id)
-                        else:
-                             logger.info(f"MATCH-CHECK: User {user_id} was matched by peer during wait.")
+                             await manager.send_personal_message(json.dumps({
+                                 "type": "match_found",  
+                                 "peer_id": 0,  
+                                 "is_bot": True 
+                             }), user_id)
                     
                     await manager.broadcast_active_users()
                     
