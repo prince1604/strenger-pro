@@ -376,7 +376,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                         await manager.send_personal_message(json.dumps({"type": "match_found", "peer_id": peer_id}), user_id)
                         await manager.send_personal_message(json.dumps({"type": "match_found", "peer_id": user_id}), peer_id)
                     else:
-                    else:
+
                         # NO HUMAN FOUND IMMEDIATELY: ENTER WAIT LOOP
                         logger.info(f"WAITING: User {user_id} entering retention pool...")
                         
