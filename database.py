@@ -12,19 +12,21 @@ except ImportError:
     psycopg2 = None
     print("ERROR: psycopg2-binary not installed")
 
-# Database Configuration (PostgreSQL for Koyeb)
-db_host = os.getenv("DATABASE_HOST", "ep-gentle-hat-agcpn3l9.c-2.eu-central-1.pg.koyeb.app")
-db_user = os.getenv("DATABASE_USER", "koyeb-adm")
-db_pass = os.getenv("DATABASE_PASSWORD", "npg_g8MvPfqjw1lO")
+# Database Configuration (Neon Postgres - Global)
+# User provided: postgresql://neondb_owner:npg_KFPlE17thcvk@.../neon
+db_host = os.getenv("DATABASE_HOST", "ep-sparkling-paper-aegasdt0-pooler.c-2.us-east-2.aws.neon.tech")
+db_user = os.getenv("DATABASE_USER", "neondb_owner")
+db_pass = os.getenv("DATABASE_PASSWORD", "npg_KFPlE17thcvk") 
 db_port = int(os.getenv("DATABASE_PORT", "5432"))
-db_name = os.getenv("DATABASE_NAME", "koyebdb")
+db_name = os.getenv("DATABASE_NAME", "neon")
 
 db_config = {
     "host": db_host,
     "user": db_user,
     "password": db_pass,
     "port": db_port,
-    "database": db_name
+    "database": db_name,
+    "sslmode": "require"
 }
 
 # Global connection pool
