@@ -1,23 +1,24 @@
 FROM python:3.11-slim
 
-WORKDIR /app
+# Create a non-root user to run the app (Required for Hugging Face Spaces)
+RUN useradd -m -u 1000 user
+USER user
+ENV HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH
 
-# Install system dependencies (PostgreSQL only, no MySQL)
-RUN apt-get update && apt-get install -y \
-    gcc \
-    libpq-dev \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+# Set working directory to the user's home (where they have write permission)
+WORKDIR $HOME/app
 
-# Upgrade pip for better reliability
-RUN pip install --upgrade pip
+# Copy dependencies first for caching
+COPY --chown=user requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir --retries 5 --timeout 100 -r requirements.txt
 
-# Copy and install Python dependencies with retry
-COPY requirements.txt .
-RUN pip install --no-cache-dir --retries 5 --timeout 100 -r requirements.txt
+# Copy application code with correct ownership
+COPY --chown=user . .
 
-# Copy application code
-COPY . .
+# Expose the port (Hugging Face expects 7860 by default)
+EXPOSE 7860
 
-# Run the application
-CMD ["gunicorn", "-w", "1", "--threads", "4", "--timeout", "120", "-k", "uvicorn.workers.UvicornWorker", "main:app", "--bind", "0.0.0.0:8000"]
+# Run with Gunicorn on port 7860 (Hugging Face default) or $PORT if provided
+CMD ["sh", "-c", "gunicorn -w 1 --threads 4 --timeout 120 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:${PORT:-7860}"]
