@@ -33,6 +33,37 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 1440 # 24 Hours
 
 app = FastAPI(title="Strenger Pro API", version="2.0.0")
 
+# --- PERFORMANCE & SECURITY MIDDLEWARE ---
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+import time
+from starlette.requests import Request
+
+# 1. GZip Compression (Makes responses smaller & faster)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# 2. CORS (Security - Control who can access API)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Change to your actual domain in production!
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 3. Trusted Host (Security - Prevent Host Header Attacks)
+# app.add_middleware(TrustedHostMiddleware, allowed_hosts=["YOUR_DOMAIN.com", "*.koyeb.app", "localhost"])
+
+# 4. Process Time Monitoring (Performance Tracking)
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    response.headers["X-Process-Time"] = str(process_time)
+    return response
+
 # --- STATIC FILES (Absolute Path) ---
 import os
 static_dir = os.path.join(os.path.dirname(__file__), "static")
