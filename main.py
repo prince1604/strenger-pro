@@ -33,8 +33,15 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 1440 # 24 Hours
 
 app = FastAPI(title="Strenger Pro API", version="2.0.0")
 
-# --- STATIC FILES ---
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# --- STATIC FILES (Absolute Path) ---
+import os
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+if os.path.isdir(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+else:
+    # Fallback to creating it if missing
+    os.makedirs(static_dir, exist_ok=True)
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # --- AUTH MODELS ---
 class UserRegister(BaseModel):

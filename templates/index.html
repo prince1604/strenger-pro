@@ -853,8 +853,8 @@
 
         /* GEOLOCATION & MAP */
         /* SNAP MAP STYLE VISUALIZATION */
-        const AVATAR_MALE = '/static/imges/man.png';
-        const AVATAR_FEMALE = '/static/imges/girl.png';
+        const AVATAR_MALE = '/static/imges/man.png?v=' + new Date().getTime();
+        const AVATAR_FEMALE = '/static/imges/girl.png?v=' + new Date().getTime();
 
         function initMap() {
             if (!map) {
@@ -942,7 +942,8 @@
                         html: `
                             <div class="avatar-wrapper">
                                 <div class="user-glow"></div>
-                                <img src="${avatarUrl}" class="avatar-bitmoji">
+                                <img src="${avatarUrl}" class="avatar-bitmoji" 
+                                     onerror="this.onerror=null; this.src='https://avatar.iran.liara.run/public/${u.gender && u.gender.toLowerCase() === 'female' ? 'girl' : 'boy'}'">
                                 <div class="avatar-label">
                                     <span class="user-status-dot"></span>
                                     ${u.username} <span style="opacity:0.6; margin-left:2px">· ${u.distance !== undefined ? u.distance + 'km' : ''}</span>
@@ -1011,6 +1012,7 @@
 
                 if (res.ok && data.access_token) {
                     token = data.access_token;
+                    localStorage.setItem('strenger_token', token);
                     document.getElementById('auth-overlay').style.opacity = '0';
                     setTimeout(() => {
                         document.getElementById('auth-overlay').style.display = 'none';
@@ -1050,6 +1052,7 @@
 
                 if (response.ok) {
                     token = data.access_token;
+                    localStorage.setItem('strenger_token', token);
                     proNotify("IDENTITY CREATED: Welcome to Strenger Pro", "success");
                     document.getElementById('auth-overlay').style.opacity = '0';
                     setTimeout(() => {
@@ -1073,6 +1076,7 @@
         /* APP CORE */
         function startApp() {
             try {
+                if (!token) throw new Error("No token found");
                 payload_id = JSON.parse(atob(token.split('.')[1])).id;
                 navigator.geolocation.getCurrentPosition(pos => {
                     myLocation = { lat: pos.coords.latitude, lon: pos.coords.longitude };
@@ -1089,10 +1093,22 @@
                     }
                 }, 5000);
             } catch (e) {
-                console.error("APP START ERROR:", e);
-                proNotify("Error starting app. Please try refreshing.", "error");
+                console.error("AUTH RESTORE FAILED:", e);
+                localStorage.removeItem('strenger_token');
+                document.getElementById('auth-overlay').style.display = 'flex';
+                document.getElementById('auth-overlay').style.opacity = '1';
             }
         }
+
+        // Restore Session on Load
+        window.addEventListener('load', () => {
+            const saved = localStorage.getItem('strenger_token');
+            if (saved) {
+                token = saved;
+                document.getElementById('auth-overlay').style.display = 'none';
+                startApp();
+            }
+        });
 
         function initWS() {
             if (ws) ws.close();
@@ -1106,7 +1122,12 @@
                 ws.send(JSON.stringify({ type: 'search_nearest', lat: myLocation.lat, lon: myLocation.lon }));
             };
 
-            ws.onclose = () => {
+            ws.onclose = (e) => {
+                if (e.code === 1008) {
+                    localStorage.removeItem('strenger_token');
+                    location.reload();
+                    return;
+                }
                 document.getElementById('status').innerText = 'CONNECTION LOST';
                 document.getElementById('status').style.color = 'var(--danger)';
                 addSystemMsg("🔴 Connection lost. Attempting to reconnect...");
